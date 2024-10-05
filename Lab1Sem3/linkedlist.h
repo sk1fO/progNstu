@@ -1,15 +1,6 @@
-#ifndef linkedlist
-#define linkedlist
-
+#include "node.h"
 #include <iostream>
-
 using namespace std;
-
-struct Node {
-    string val;
-    Node* next;
-    Node(string _val) : val(_val), next(nullptr){}
-};
 
 struct list{
     Node* first;
@@ -111,5 +102,4 @@ struct list{
 };
 
 
-#endif
 
