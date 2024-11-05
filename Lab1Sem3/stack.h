@@ -3,7 +3,6 @@
 #include <iostream>
 using namespace std;
 
-
 struct stack{
     Node* first;
     Node* last;

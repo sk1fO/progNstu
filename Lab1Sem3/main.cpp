@@ -7,6 +7,7 @@ using namespace std;
 
 
 int main(){
+    
     list flist;
     flist.push_back("Lol");
     flist.push_back("123");

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "node.h"
 
 #include <iostream>
@@ -96,6 +98,27 @@ struct list{
         }
         slow->next = fast->next;
         delete fast;
+    }
+
+    Node* operator[] (const int index) {
+        if (isEmpty()) return nullptr;
+        Node* p = first;
+        for (int i = 0; i < index; i++) {
+            p = p->next;
+            if (!p) return nullptr;
+        }
+        return p;
+    }
+
+    int size(){
+        if (isEmpty()) return 0;
+        int counter = 0;
+        Node* p = first;
+        while (p){
+            counter += 1;
+            p = p->next;
+        }
+        return counter;
     }
 
 
