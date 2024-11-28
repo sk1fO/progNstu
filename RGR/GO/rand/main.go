@@ -1,33 +1,32 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"math/rand"
+	"os"
 )
 
 func main() {
-	alpha := "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	scanner := bufio.NewScanner(os.Stdin)
 
-	alphaRune := []rune(alpha)
+	fmt.Print("Введите текст для шифрования: ")
+	scanner.Scan()
+	input := scanner.Text()
 
-	rand.Shuffle(len(alphaRune), func(i, j int) {
-		alphaRune[i], alphaRune[j] = alphaRune[j], alphaRune[i]
-	})
+	byteInput := []byte(input)
 
-	reverse := Reverse("TDLGЕЖKRНИUЛЪБФQДJВVEРАЦЗЮXХFЯNОYУOBПЩZHЬЭСIAWШЫSMТPЙКГЧCМ")
-	fmt.Println(string(reverse))
-}
+	var plainText [16]byte
 
-func Reverse(s string) string {
-
-	runes := []rune(s)
-
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-
-		runes[i], runes[j] = runes[j], runes[i]
+	for len(byteInput) != 0 {
+		if len(byteInput) < 16 {
+			byteInput = append(byteInput, 0)
+		} else {
+			plainText = [16]byte(byteInput)
+			fmt.Println(plainText)
+			byteInput = byteInput[16:]
+		}
 
 	}
 
-	return string(runes)
-
+	//fmt.Println(byteInput)
 }

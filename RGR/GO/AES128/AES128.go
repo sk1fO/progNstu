@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 )
 
 const (
@@ -172,7 +174,7 @@ func subWord(word [4]byte) [4]byte {
 	return word
 }
 
-func encrypt(plaintext [16]byte, key [16]byte) [16]byte {
+func encryptFunc(plaintext [16]byte, key [16]byte) [16]byte {
 	var state [4][4]byte
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -205,7 +207,7 @@ func encrypt(plaintext [16]byte, key [16]byte) [16]byte {
 	return ciphertext
 }
 
-func decrypt(ciphertext [16]byte, key [16]byte) [16]byte {
+func decryptFunc(ciphertext [16]byte, key [16]byte) [16]byte {
 	var state [4][4]byte
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -239,19 +241,77 @@ func decrypt(ciphertext [16]byte, key [16]byte) [16]byte {
 }
 
 func main() {
-	plaintext := [16]byte{'H', 'E', 'L', 'L', 'O', ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '!'}
-	key := [16]byte{0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c}
 
-	fmt.Println(plaintext)
+	scanner := bufio.NewScanner(os.Stdin)
 
-	ciphertext := encrypt(plaintext, key)
-	fmt.Println("Ciphertext: ", ciphertext)
+	fmt.Print("Введите текст для шифрования: ")
+	scanner.Scan()
+	input := scanner.Text()
 
-	decryptedText := decrypt(ciphertext, key)
-	bs := make([]byte, 16)
-	for i, value := range decryptedText {
-		bs[i] = value
+	fmt.Print("Введите ключ: ")
+	scanner.Scan()
+	inputKey := scanner.Text()
+
+	cipher := encrypt(input, inputKey)
+	fmt.Println("Зашифрованное сообщение: ", cipher)
+
+	plain := decrypt(cipher, inputKey)
+	fmt.Println("Расшифрованное сообщение:", plain)
+
+}
+
+// Функция шифрования, принимает текст, ключ, возвращает зашифрованную строку
+// если ключ > 16 байт, то обрезается до 16, если < 16, то удлиняется повторением себя
+func encrypt(_plainText, _keyInput string) (_ciphertext string) {
+	byteKey := []byte(_keyInput)
+	byteInput := []byte(_plainText)
+
+	for len(byteKey) < 16 {
+		byteKey = append(byteKey, byteKey...)
+	}
+	key := [16]byte(byteKey)
+
+	var byteCipher []byte
+	var ciphertext [16]byte
+	var plainText [16]byte
+
+	for len(byteInput) != 0 {
+		if len(byteInput) < 16 {
+			byteInput = append(byteInput, 0)
+		} else {
+			plainText = [16]byte(byteInput)
+			ciphertext = encryptFunc(plainText, key)
+			byteCipher = append(byteCipher, ciphertext[:]...)
+			byteInput = byteInput[16:]
+		}
 	}
 
-	fmt.Println("Decrypted Text: ", string(bs))
+	return string(byteCipher)
+}
+
+func decrypt(_ciphertext, _keyInput string) (_plainText string) {
+	byteKey := []byte(_keyInput)
+	byteCipher := []byte(_ciphertext)
+
+	for len(byteKey) < 16 {
+		byteKey = append(byteKey, byteKey...)
+	}
+	key := [16]byte(byteKey)
+
+	var bytePlane []byte
+	var ciphertext [16]byte
+	var plainText [16]byte
+
+	for len(byteCipher) != 0 {
+		if len(byteCipher) < 16 {
+			byteCipher = append(byteCipher, 0)
+		} else {
+			ciphertext = [16]byte(byteCipher)
+			plainText = decryptFunc(ciphertext, key)
+			bytePlane = append(bytePlane, plainText[:]...)
+			byteCipher = byteCipher[16:]
+		}
+	}
+
+	return string(bytePlane)
 }
