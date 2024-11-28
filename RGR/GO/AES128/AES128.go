@@ -1,10 +1,4 @@
-package main
-
-import (
-	"bufio"
-	"fmt"
-	"os"
-)
+package AES128
 
 const (
 	NumRounds = 10 // Количество раундов для AES-128
@@ -240,29 +234,9 @@ func decryptFunc(ciphertext [16]byte, key [16]byte) [16]byte {
 	return plaintext
 }
 
-func main() {
-
-	scanner := bufio.NewScanner(os.Stdin)
-
-	fmt.Print("Введите текст для шифрования: ")
-	scanner.Scan()
-	input := scanner.Text()
-
-	fmt.Print("Введите ключ: ")
-	scanner.Scan()
-	inputKey := scanner.Text()
-
-	cipher := encrypt(input, inputKey)
-	fmt.Println("Зашифрованное сообщение: ", cipher)
-
-	plain := decrypt(cipher, inputKey)
-	fmt.Println("Расшифрованное сообщение:", plain)
-
-}
-
 // Функция шифрования, принимает текст, ключ, возвращает зашифрованную строку
 // если ключ > 16 байт, то обрезается до 16, если < 16, то удлиняется повторением себя
-func encrypt(_plainText, _keyInput string) (_ciphertext string) {
+func Encrypt(_plainText, _keyInput string) (_ciphertext string) {
 	byteKey := []byte(_keyInput)
 	byteInput := []byte(_plainText)
 
@@ -289,7 +263,7 @@ func encrypt(_plainText, _keyInput string) (_ciphertext string) {
 	return string(byteCipher)
 }
 
-func decrypt(_ciphertext, _keyInput string) (_plainText string) {
+func Decrypt(_ciphertext, _keyInput string) (_plainText string) {
 	byteKey := []byte(_keyInput)
 	byteCipher := []byte(_ciphertext)
 

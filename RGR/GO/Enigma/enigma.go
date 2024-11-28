@@ -1,11 +1,6 @@
-package main
+package Enigma
 
 import (
-	"bufio"
-	"fmt"
-	"os"
-	"os/exec"
-	"strconv"
 	"strings"
 )
 
@@ -25,34 +20,6 @@ func init_reflector() {
 	for i := range N {
 		reflect[AlphabetAlphaRune[i]] = AlphabetRune[i]
 	}
-}
-
-func main() {
-	stpos := [3]int{0, 0, 0}
-	clearConsole()
-
-	scanner := bufio.NewScanner(os.Stdin)
-
-	fmt.Print("Введите текст для шифрования: ")
-	scanner.Scan()
-	input := scanner.Text()
-
-	fmt.Print("Введите начальные позиции 3х роторов: ")
-	scanner.Scan()
-	start_positions := scanner.Text()
-	start_positions_slice := strings.Split(start_positions, " ")
-	for i := range 3 {
-		stpos[i], _ = strconv.Atoi(start_positions_slice[i])
-	}
-
-	fmt.Println(Encryption(input, stpos))
-}
-
-// Linux очистка консоли
-func clearConsole() {
-	cmd := exec.Command("clear")
-	cmd.Stdout = os.Stdout
-	cmd.Run()
 }
 
 // Функция описывающая первый ротор, принимает: символ на замену, инверсия?, сдвиг
@@ -157,7 +124,7 @@ func reflector(symbol rune) rune {
 // Функция шифрования
 // Принимает: входной текст строка и массив стартовых положений роторов
 // Возвращает: зашифрованный текст
-func Encryption(input string, startpos [3]int) string {
+func Encrypt(input string, startpos [3]int) string {
 	init_reflector()               // инициализация отражателя
 	var char rune                  // инициализация символа для перевода
 	result := ""                   // итоговая строка

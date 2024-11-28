@@ -1,11 +1,4 @@
-package main
-
-import (
-	"bufio"
-	"fmt"
-	"os"
-	"os/exec"
-)
+package Gamma
 
 var Alphabet = make(map[rune]int)
 var AlphabetAlpha = make(map[int]rune)
@@ -27,33 +20,12 @@ func init() {
 	N = len(Alphabet)
 }
 
-func main() {
+// функция шифрования, принимает исходный текст и ключ в виде строки
+// возвращает шифротекст текст в виде строки
+func Encrypt(input, keyInput string) (cipherText string) {
 
-	clearConsole()
-
-	scanner := bufio.NewScanner(os.Stdin)
-
-	fmt.Print("Введите текст для шифрования: ")
-	scanner.Scan()
-	input := scanner.Text()
-
-	fmt.Print("Введите ключ: ")
-	scanner.Scan()
-	keyInput := scanner.Text()
-
-	runeKey := []rune(keyInput)
-	runeInput := []rune(input)
-
-	crypted := encryption(runeInput, runeKey)
-	fmt.Println(crypted)
-
-	runeCrypted := []rune(crypted)
-	decrypted := decryption(runeCrypted, runeKey)
-	fmt.Println(decrypted)
-}
-
-// функция шифрования
-func encryption(rawText, key []rune) string {
+	key := []rune(keyInput)
+	rawText := []rune(input)
 
 	// удлиннение ключа до размера входной строки
 	for len(key) < len(rawText) {
@@ -76,9 +48,12 @@ func encryption(rawText, key []rune) string {
 	return result // возврат результата
 }
 
-// функция расшифровки
-func decryption(rawText, key []rune) string {
+// функция расшифровки, принимает шифротекст и ключ в виде строки
+// возвращает расшифрованый текст в виде строки
+func Decrypt(ciferText, keyInput string) (plainText string) {
 
+	rawText := []rune(ciferText)
+	key := []rune(keyInput)
 	//удлиняем ключ до размера входной строки
 	for len(key) < len(rawText) {
 		key = append(key, key...)
@@ -100,11 +75,4 @@ func decryption(rawText, key []rune) string {
 
 	return result
 
-}
-
-// Linux очистка консоли
-func clearConsole() {
-	cmd := exec.Command("clear")
-	cmd.Stdout = os.Stdout
-	cmd.Run()
 }
