@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -66,9 +67,9 @@ func CreatePath(tableName string) string {
 	return ABSOLUTE_PATH + config.Name + "/" + tableName
 }
 
-// функция поиска последнего .csv
-func pathToMax(path string) string {
-
+// функция поиска последнего .csv, принимает: название таблицы
+func pathToMax(_table string) string {
+	path := CreatePath(_table)
 	// считываем список файлов в директории
 	lst, err := os.ReadDir(path)
 	if err != nil {
@@ -100,10 +101,11 @@ func pathToMax(path string) string {
 	return path + "/" + lst[len(lst)-1].Name()
 }
 
-// реализация вставки, принимает: путь к таблице, слайс значений
-func INSERT_INTO(path string, value []string) {
+// реализация вставки, принимает: название таблицы, слайс значений
+func INSERT_INTO(table string, value []string) {
 	//открываем файл на чтение
-	file, err := os.Open(pathToMax(path))
+	path := CreatePath(table)
+	file, err := os.Open(pathToMax(table))
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +113,7 @@ func INSERT_INTO(path string, value []string) {
 	reader := csv.NewReader(file) //парсинг pk...
 
 	values, _ := reader.ReadAll()
-	splitPath := strings.Split(pathToMax(path), "/") //сплит пути к файлу
+	splitPath := strings.Split(pathToMax(table), "/") //сплит пути к файлу
 	maxNumStr := splitPath[len(splitPath)-1]
 	maxNumInt, _ := strconv.Atoi(maxNumStr[:len(maxNumStr)-4]) //приводим к int
 	table_name := splitPath[len(splitPath)-2]                  //имя таблицы
@@ -141,7 +143,7 @@ func INSERT_INTO(path string, value []string) {
 	}
 
 	//открываем файл на запись в конец
-	file, err = os.OpenFile(pathToMax(path), os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	file, err = os.OpenFile(pathToMax(table), os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 	writer := csv.NewWriter(file)
 
 	//формируем срез, куда запишем данные
@@ -154,11 +156,59 @@ func INSERT_INTO(path string, value []string) {
 	file.Close()
 }
 
+func cross_join() {
+
+}
+
+func SELECT(table_column []string, tables []string) {
+	if len(tables) > 1 {
+		for _, i := range table_column {
+			tableSlice := strings.Split(i, ".")
+			table := tableSlice[0]
+			col := tableSlice[1]
+
+			if slices.Contains(config.Structure[table], col) {
+				// если больше 1 таблицы - кросс джоин, иначе запись всей таблицы в темп
+
+			} else {
+				fmt.Println("Ошибка, неверная колонка ", col)
+			}
+		}
+	} else {
+		tableSlice := strings.Split(table_column[0], ".")
+		table := tableSlice[0]
+		col := tableSlice[1]
+		if slices.Contains(config.Structure[table], col) {
+			file, err := os.Open(pathToMax(table))
+			if err != nil {
+				panic(err)
+			}
+			reader := csv.NewReader(file)
+			allRecs, _ := reader.ReadAll()
+			col_num := 0
+			for j, i := range config.Structure[table] {
+				if i == col {
+					col_num = j
+				}
+			}
+
+			for _, records := range allRecs {
+				fmt.Println(records[col_num])
+			}
+		} else {
+			fmt.Println("Ошибка, неверная колонка ", col)
+		}
+	}
+}
+
 func init() {
 	ReadJson()
 	CreateDir()
 }
 func main() {
-	value := []string{"89538834111", "Игорь", "15%"}
-	INSERT_INTO(CreatePath("лояльность"), value)
+	//value := []string{"51123", "Пенталгин", "Парацетамол", "23"}
+	//INSERT_INTO("лекарства", value)
+	sel := []string{"лекарства.вещество"}
+	tab := []string{"лекарства"}
+	SELECT(sel, tab)
 }
