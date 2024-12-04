@@ -4,6 +4,7 @@ const (
 	NumRounds = 10 // Количество раундов для AES-128
 )
 
+// SBox представляет собой заменное таблицу для шифрования и расшифровки.
 var SBox = []byte{
 	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
 	0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -23,6 +24,7 @@ var SBox = []byte{
 	0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16,
 }
 
+// InvSBox представляет собой обратную замену для расшифровки.
 var InvSBox = []byte{
 	0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
 	0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
@@ -42,8 +44,10 @@ var InvSBox = []byte{
 	0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d,
 }
 
+// RCon содержит константы для расширения ключа.
 var RCon = []byte{0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36}
 
+// subBytes выполняет замену всех байтов состояния на их значения из SBox.
 func subBytes(state [4][4]byte) [4][4]byte {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -53,6 +57,7 @@ func subBytes(state [4][4]byte) [4][4]byte {
 	return state
 }
 
+// invSubBytes выполняет обратную замену всех байтов состояния на их значения из InvSBox.
 func invSubBytes(state [4][4]byte) [4][4]byte {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -62,6 +67,7 @@ func invSubBytes(state [4][4]byte) [4][4]byte {
 	return state
 }
 
+// shiftRows сдвигает каждую строку состояния на определенное количество позиций влево.
 func shiftRows(state [4][4]byte) [4][4]byte {
 	for i := 1; i < 4; i++ {
 		for j := 0; j < i; j++ {
@@ -75,6 +81,7 @@ func shiftRows(state [4][4]byte) [4][4]byte {
 	return state
 }
 
+// invShiftRows выполняет обратный сдвиг каждой строки состояния на определенное количество позиций вправо.
 func invShiftRows(state [4][4]byte) [4][4]byte {
 	for i := 1; i < 4; i++ {
 		for j := 0; j < i; j++ {
@@ -88,6 +95,7 @@ func invShiftRows(state [4][4]byte) [4][4]byte {
 	return state
 }
 
+// mixColumns выполняет линейные преобразования над столбцами состояния.
 func mixColumns(state [4][4]byte) [4][4]byte {
 	var result [4][4]byte
 	for i := 0; i < 4; i++ {
@@ -99,6 +107,7 @@ func mixColumns(state [4][4]byte) [4][4]byte {
 	return result
 }
 
+// invMixColumns выполняет обратные линейные преобразования над столбцами состояния.
 func invMixColumns(state [4][4]byte) [4][4]byte {
 	var result [4][4]byte
 	for i := 0; i < 4; i++ {
@@ -110,6 +119,7 @@ func invMixColumns(state [4][4]byte) [4][4]byte {
 	return result
 }
 
+// gMul выполняет умножение двух элементов поля GF(2^8).
 func gMul(a, b byte) byte {
 	var p byte
 	for i := 0; i < 8; i++ {
@@ -126,6 +136,7 @@ func gMul(a, b byte) byte {
 	return p
 }
 
+// addRoundKey выполняет XOR между состоянием и раундовым ключом.
 func addRoundKey(state [4][4]byte, key [4][4]byte) [4][4]byte {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
@@ -135,6 +146,7 @@ func addRoundKey(state [4][4]byte, key [4][4]byte) [4][4]byte {
 	return state
 }
 
+// keyExpansion расширяет ключ до нужной длины.
 func keyExpansion(key [16]byte) [][4]byte {
 	var expandedKey [][4]byte
 	for i := 0; i < 4; i++ {
@@ -157,10 +169,12 @@ func keyExpansion(key [16]byte) [][4]byte {
 	return expandedKey
 }
 
+// rotWord выполняет циклический сдвиг слова влево на одну позицию.
 func rotWord(word [4]byte) [4]byte {
 	return [4]byte{word[1], word[2], word[3], word[0]}
 }
 
+// subWord выполняет замену каждого байта слова на его значение из SBox.
 func subWord(word [4]byte) [4]byte {
 	for i := 0; i < 4; i++ {
 		word[i] = SBox[word[i]]
@@ -168,6 +182,7 @@ func subWord(word [4]byte) [4]byte {
 	return word
 }
 
+// encryptFunc выполняет основную функцию шифрования AES-128.
 func encryptFunc(plaintext [16]byte, key [16]byte) [16]byte {
 	var state [4][4]byte
 	for i := 0; i < 4; i++ {
@@ -201,6 +216,7 @@ func encryptFunc(plaintext [16]byte, key [16]byte) [16]byte {
 	return ciphertext
 }
 
+// decryptFunc выполняет основную функцию расшифровки AES-128.
 func decryptFunc(ciphertext [16]byte, key [16]byte) [16]byte {
 	var state [4][4]byte
 	for i := 0; i < 4; i++ {
@@ -234,8 +250,7 @@ func decryptFunc(ciphertext [16]byte, key [16]byte) [16]byte {
 	return plaintext
 }
 
-// Функция шифрования, принимает текст, ключ, возвращает зашифрованную строку
-// если ключ > 16 байт, то обрезается до 16, если < 16, то удлиняется повторением себя
+// Encrypt шифрует входной текст с использованием AES-128.
 func Encrypt(_plainText, _keyInput string) (_ciphertext string) {
 	byteKey := []byte(_keyInput)
 	byteInput := []byte(_plainText)
@@ -263,6 +278,7 @@ func Encrypt(_plainText, _keyInput string) (_ciphertext string) {
 	return string(byteCipher)
 }
 
+// Decrypt расшифровывает входную зашифрованную строку с использованием AES-128.
 func Decrypt(_ciphertext, _keyInput string) (_plainText string) {
 	byteKey := []byte(_keyInput)
 	byteCipher := []byte(_ciphertext)

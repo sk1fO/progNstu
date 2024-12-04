@@ -7,7 +7,7 @@ var N int
 func init() {
 	rusAlphabet := "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 	engAlphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	symbolAlphabet := " ,./';[]!@#$%^&*()-_=+{}<>?№:1234567890`~" + `|\"`
+	symbolAlphabet := "	" + `|\"`
 
 	AlphabetString := rusAlphabet + engAlphabet + symbolAlphabet
 	AlphabetRune := []rune(AlphabetString)
