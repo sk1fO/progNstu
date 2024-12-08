@@ -2,163 +2,210 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
 #include <semaphore>
 #include <barrier>
 #include <atomic>
-#include <random>
 #include <chrono>
+#include <condition_variable>
 
-// Функция для гонки с использованием различных примитивов синхронизации
-void race_with_mutex(int thread_id, int race_length, std::mutex& mtx, std::vector<char>& track) {
-    for (int i = 0; i < race_length; ++i) {
-        std::lock_guard<std::mutex> lock(mtx);
-        track.push_back('T' + thread_id);
-    }
+using namespace std;
+mutex console_mutex;
+
+// создание семафора счетчика с начальным значением 4 (до четырех потоков смогут одновременно получить доступ к ресурсу, уменьшая счетчик при вызове acquire, и увеличивая при вызове release) 
+// если все разрешения уже заняты, потоки будут блокироваться при вызове acquire
+counting_semaphore sem(4);
+
+atomic<int> counter(0); // атомарная переменная - это переменная, операции с которой выполняются без возможности прерывания другими потоками
+
+atomic_flag spinlock = ATOMIC_FLAG_INIT; // инициализация атомарного флага для использования в качестве спин-блокировки
+atomic_flag spinwait = ATOMIC_FLAG_INIT;
+
+mutex cv_mutex; //  создание объекта мьютекса
+condition_variable cv; // создание объекта условной переменной
+atomic<bool> is_condition_met = false; // переменная изменяется из разных потоков
+
+int threadCount = 0;
+condition_variable barrierCond;
+
+bool is_monitor_locked = false;
+
+atomic<long long> total_execution_time(0); // Общее время выполнения всех потоков
+atomic<int> completed_threads(0); // Количество потоков, завершивших выполнение
+
+mutex total_execution_mutex;
+
+void MonitorEnter() { // блокирует монитор, чтобы предотвратить доступ других потоков
+    mutex m;
+    unique_lock<mutex> lock(m);
+    cv.wait(lock, [&]() { return !is_monitor_locked; });// Ожидаем, пока монитор не разблокируется
+    is_monitor_locked = true;// Устанавливаем флаг блокировки монитора
 }
 
-void race_with_semaphore(int thread_id, int race_length, std::counting_semaphore<1>& sem, std::vector<char>& track) {
-    for (int i = 0; i < race_length; ++i) {
-        sem.acquire();
-        track.push_back('T' + thread_id);
-        sem.release();
-    }
+void MonitorExit() { // разблокирует монитор, позволяя другим потокам получить доступ
+    mutex m;
+    unique_lock<mutex> lock(m);
+    is_monitor_locked = false; // Сбрасываем флаг блокировки монитора
+    cv.notify_one();// Уведомление одного потока, ожидающего блокировку монитора
 }
 
-void race_with_semaphore_slim(int thread_id, int race_length, std::binary_semaphore& sem, std::vector<char>& track) {
-    for (int i = 0; i < race_length; ++i) {
-        sem.acquire();
-        track.push_back('T' + thread_id);
-        sem.release();
-    }
+char generateRandomChar() { // функция для генерации случайных символов
+    return static_cast<char>('!' + rand() % 94); // добавление случайного числа к коду символа '!', чтобы создавать случайные символы из диапазона от '!' до '~'
 }
 
-void race_with_barrier(int thread_id, int race_length, std::barrier& b, std::vector<char>& track) {
-    for (int i = 0; i < race_length; ++i) {
-        track.push_back('T' + thread_id);
-        b.arrive_and_wait();
-    }
-}
+void race(int thread_id, int choice, int raceLength, int numberThreads) { // функция, выполняемая в каждом потоке
 
-void race_with_spinlock(int thread_id, int race_length, std::atomic<bool>& lock, std::vector<char>& track) {
-    for (int i = 0; i < race_length; ++i) {
-        while (lock.exchange(true, std::memory_order_acquire)) {
-            std::this_thread::yield();
-        }
-        track.push_back('T' + thread_id);
-        lock.store(false, std::memory_order_release);
-    }
-}
+    auto start_time = chrono::high_resolution_clock::now();
+    barrier barrier(numberThreads);
+    mutex m;
 
-void race_with_spinwait(int thread_id, int race_length, std::atomic<bool>& lock, std::vector<char>& track) {
-    for (int i = 0; i < race_length; ++i) {
-        while (lock.exchange(true, std::memory_order_acquire)) {
-            std::this_thread::yield();
+    switch (choice) {
+    case 1: //поток блокируется с помощью мьютекса, чтобы гарантировать, что только один поток может выполнять вывод на экран
+        for (int i = 0; i < raceLength; ++i) {
+            m.lock();
+            cout << generateRandomChar();
+            m.unlock();
+            // после вывода символа поток разблокируется, затем приостанавливается на 100 миллисекунд
+            this_thread::sleep_for(chrono::milliseconds(100));
         }
-        track.push_back('T' + thread_id);
-        lock.store(false, std::memory_order_release);
-    }
-}
+        break;
 
-void race_with_monitor(int thread_id, int race_length, std::mutex& mtx, std::condition_variable& cv, std::vector<char>& track, std::atomic<bool>& ready) {
-    for (int i = 0; i < race_length; ++i) {
-        std::unique_lock<std::mutex> lock(mtx);
-        cv.wait(lock, [&ready] { return ready.load(); });
-        track.push_back('T' + thread_id);
-        ready.store(false);
-        cv.notify_all();
-    }
-}
+    case 2:
+        for (int i = 0; i < raceLength; ++i) {
+            sem.acquire();  // уменьшение счетчика семафора на 1, блокировка, если счетчик равен 0
+            cout << generateRandomChar();
+            sem.release(); // увеличение счетчика после использования ресурса
+            this_thread::sleep_for(chrono::milliseconds(100));
+        }
+        break;
 
-void run_race(int num_threads, int race_length, int sync_type) {
-    std::vector<std::thread> threads;
-    std::vector<char> track;
-    std::mutex mtx;
-    std::condition_variable cv;
-    std::atomic<bool> ready(false);
+    case 3: // управление доступом к ресурсу с помощью атомарных операций, таких как увеличение и уменьшение значения переменной
+        for (int i = 0; i < raceLength; ++i) {
+            while (counter.fetch_add(1) >= 1) { // если значение counter оказывается больше или равно 1, происходит отмена увеличения 
+                counter.fetch_sub(1);
+                this_thread::yield(); // вызов this_thread::yield(), который позволяет другим потокам выполниться
+            }
+            cout << generateRandomChar();
+            counter.fetch_sub(1); // уменьшение счетчика на 1
+            this_thread::sleep_for(chrono::milliseconds(100));
+        }
+        break;
 
-    switch (sync_type) {
-        case 1: { // Mutex
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_mutex, i, race_length, std::ref(mtx), std::ref(track));
+    case 4:  // используется для того, чтобы поток достиг барьера и остановил свое выполнение, ожидая остальных потоков до тех пор, пока все они не достигнут этой точки синхронизации
+        for (int i = 0; i < raceLength; ++i) { 
+            unique_lock<mutex> lock(m); 
+            threadCount++; // Увеличение счетчика потоков
+            if (threadCount == numberThreads) { // Если достигнуто заданное количество потоков, то происходит сброс счетчика и уведомление всех потоков о достижении барьера
+                threadCount = 0; 
+                barrierCond.notify_all(); 
+                this_thread::sleep_for(chrono::milliseconds(100)); 
             }
-            break;
-        }
-        case 2: { // Semaphore
-            std::counting_semaphore<1> sem(1);
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_semaphore, i, race_length, std::ref(sem), std::ref(track));
+            else {
+                barrierCond.wait(lock, [] { return threadCount == 0; }); // Ожидание условия с использованием мьютекса
             }
-            break;
+            cout << generateRandomChar(); 
         }
-        case 3: { // SemaphoreSlim
-            std::binary_semaphore sem(1);
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_semaphore_slim, i, race_length, std::ref(sem), std::ref(track));
+        break; 
+
+    case 5:
+        for (int i = 0; i < raceLength; ++i) {
+            // ожидание доступности ресурса
+            while (spinlock.test_and_set(memory_order_acquire)) { // проверка текущего значения атомарного флага и установка его в true, если оно было false
+                // аргумент memory_order_acquire обеспечивает правильный порядок операций с памятью для синхронизации
+                this_thread::yield(); // передача управления другим потокам
             }
-            break;
+            cout << generateRandomChar(); // использование ресурса
+            spinlock.clear(memory_order_release); // снятие флага после использования ресурса
+            this_thread::sleep_for(chrono::milliseconds(100));
         }
-        case 4: { // Barrier
-            std::barrier b(num_threads);
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_barrier, i, race_length, std::ref(b), std::ref(track));
+        break;
+
+    case 6:
+        for (int i = 0; i < raceLength; i++) { 
+            this_thread::sleep_for(chrono::milliseconds(100)); 
+
+            while (spinwait.test_and_set(memory_order_acquire)) { // Цикл ожидания освобождения ресурса
+                this_thread::yield(); 
             }
-            break;
+            cout << generateRandomChar(); 
+            spinwait.clear(memory_order_release); // Освобождение ресурса
         }
-        case 5: { // SpinLock
-            std::atomic<bool> lock(false);
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_spinlock, i, race_length, std::ref(lock), std::ref(track));
-            }
-            break;
+        break; 
+        
+    case 7:
+        for (int i = 0; i < raceLength; i++) {
+            MonitorEnter(); // блокирует монитор, чтобы предотвратить доступ других потоков
+            cout << generateRandomChar();
+            MonitorExit(); // разблокирует монитор, позволяя другим потокам получить доступ
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        case 6: { // SpinWait
-            std::atomic<bool> lock(false);
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_spinwait, i, race_length, std::ref(lock), std::ref(track));
-            }
-            break;
-        }
-        case 7: { // Monitor
-            for (int i = 0; i < num_threads; ++i) {
-                threads.emplace_back(race_with_monitor, i, race_length, std::ref(mtx), std::ref(cv), std::ref(track), std::ref(ready));
-            }
-            break;
-        }
+        break;
+
+    default:
+        cout << "Некорректный выбор команды" << endl;
+        break;
+    }
+    cout << endl;
+
+    auto end_time = chrono::high_resolution_clock::now(); // получение текущего времени
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end_time - start_time);
+    //unique_lock<mutex> lock(console_mutex);
+    cout << "Поток " << thread_id << ": Время выполнения - " << duration.count() << " миллисекунд." << endl; // вывод информации о времени выполнения потока 
+
+    // Обновление общего времени выполнения и количества завершенных потоков
+    {
+        lock_guard<mutex> lock(total_execution_mutex);
+        total_execution_time += duration.count();
+        completed_threads++;
     }
 
-    for (auto& t : threads) {
-        t.join();
+    // Ожидание завершения всех потоков
+    if (completed_threads == numberThreads) {
+        // Вычисление и вывод среднего времени выполнения
+        long long average_execution_time = total_execution_time / numberThreads;
+        unique_lock<mutex> lock(console_mutex);
+        cout << "Среднее время выполнения всех потоков: " << average_execution_time << " миллисекунд." << endl;
     }
-
-    std::cout << "Race results: ";
-    for (char c : track) {
-        std::cout << c << " ";
-    }
-    std::cout << std::endl;
 }
 
 int main() {
-    int num_threads, race_length, sync_type;
+    int numberThreads;
+    int raceLength;
 
-    std::cout << "Enter the number of threads: ";
-    std::cin >> num_threads;
+    srand(static_cast<unsigned int>(time(nullptr)));
 
-    std::cout << "Enter the length of the race: ";
-    std::cin >> race_length;
+    cout << "Введите количество потоков: ";
+    cin >> numberThreads;
+    cout << "Введите длину гонки: ";
+    cin >> raceLength;
 
-    std::cout << "Choose synchronization primitive:\n"
-              << "1. Mutex\n"
-              << "2. Semaphore\n"
-              << "3. SemaphoreSlim\n"
-              << "4. Barrier\n"
-              << "5. SpinLock\n"
-              << "6. SpinWait\n"
-              << "7. Monitor\n"
-              << "Your choice: ";
-    std::cin >> sync_type;
+    int choice;
+    do {
+        cout << "Возможные примитивы синхронизации: " << endl;
+        cout << "1. Mutexes" << endl;
+        cout << "2. Semaphore" << endl;
+        cout << "3. SemaphoreSlim" << endl;
+        cout << "4. Barrier" << endl;
+        cout << "5. SpinLock" << endl;
+        cout << "6. SpinWait" << endl;
+        cout << "7. Monitor" << endl;
+        cout << "Выберите примитив синхронизации из предложенных: ";
+        cin >> choice;
+        if (choice < 1 || choice > 7) {
+            cout << "Неверный ввод. Пожалуйста, выберите снова." << endl;
+        }
+    } while (choice < 1 || choice > 7);
 
-    run_race(num_threads, race_length, sync_type);
+    vector<thread> threads;
 
+    // создание соответствующего количества потоков, каждый из которых вызывает функцию "race" с заданными параметрами
+    for (int i = 0; i < numberThreads; ++i) {
+        threads.emplace_back(race, i, choice, raceLength, numberThreads);
+        // emplace_back - это метод вектора в C++, который создает новый объект прямо в конце вектора
+    }
+
+    for (auto& thread : threads) { // цикл "join" ожидает завершения всех созданных потоков перед завершением основной программы
+        thread.join();
+    }
+    cout << endl;
     return 0;
 }

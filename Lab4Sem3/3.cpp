@@ -1,68 +1,207 @@
 #include <iostream>
+#include <vector>
 #include <thread>
 #include <mutex>
-#include <atomic>
+#include <condition_variable>
+#include <random>
 #include <chrono>
-#include <semaphore.h>
 
-using namespace std;
+// Глобальные переменные
+int NUM_PROCESSES;
+int NUM_RESOURCES;
+std::vector<int> available;
+std::vector<std::vector<int>> max;
+std::vector<std::vector<int>> allocation;
+std::vector<std::vector<int>> need;
 
-mutex console_mutex;
+std::mutex mtx;
+std::condition_variable cv;
+bool safe_state = true;
 
-atomic<int> sharedResource(0); // общий ресурс для чтения и записи
-atomic<bool> exitRequested(false); // флаг для запроса выхода
+// Функция для инициализации данных
+void initialize() {
+    // Запрос количества процессов и ресурсов
+    std::cout << "Введите количество процессов: ";
+    std::cin >> NUM_PROCESSES;
+    std::cout << "Введите количество ресурсов: ";
+    std::cin >> NUM_RESOURCES;
 
-sem_t semaphore;
+    // Инициализация векторов
+    available.resize(NUM_RESOURCES, 0);
+    max.resize(NUM_PROCESSES, std::vector<int>(NUM_RESOURCES, 0));
+    allocation.resize(NUM_PROCESSES, std::vector<int>(NUM_RESOURCES, 0));
+    need.resize(NUM_PROCESSES, std::vector<int>(NUM_RESOURCES, 0));
 
-void Writer(int id) {
-    while (!exitRequested) {
-        sem_wait(&semaphore); // ожидание доступа к ресурсу
-        {
-            lock_guard<mutex> lock(console_mutex); // захват мьютекса для вывода в консоль
-            cout << "Писатель " << id << " пишет: " << ++sharedResource << endl;
+    // Автозаполнение случайными данными
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(1, 10);
+
+    // Заполнение доступных ресурсов
+    for (int i = 0; i < NUM_RESOURCES; ++i) {
+        available[i] = dis(gen);
+    }
+
+    // Заполнение максимальных требований
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        for (int j = 0; j < NUM_RESOURCES; ++j) {
+            max[i][j] = dis(gen);
         }
-        sem_post(&semaphore); // освобождение ресурса
-        this_thread::sleep_for(chrono::milliseconds(100));    // задержка для имитации работы
+    }
+
+    // Заполнение текущих выделенных ресурсов
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        for (int j = 0; j < NUM_RESOURCES; ++j) {
+            allocation[i][j] = dis(gen) % (max[i][j] + 1);
+        }
+    }
+
+    // Вычисление нужных ресурсов
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        for (int j = 0; j < NUM_RESOURCES; ++j) {
+            need[i][j] = max[i][j] - allocation[i][j];
+        }
+    }
+
+    // Вывод инициализированных данных
+    std::cout << "Доступно ресурсов: ";
+    for (int i = 0; i < NUM_RESOURCES; ++i) {
+        std::cout << available[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Максимально ресурсов: " << std::endl;
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        for (int j = 0; j < NUM_RESOURCES; ++j) {
+            std::cout << max[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "Распределение: " << std::endl;
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        for (int j = 0; j < NUM_RESOURCES; ++j) {
+            std::cout << allocation[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << "Потребность: " << std::endl;
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        for (int j = 0; j < NUM_RESOURCES; ++j) {
+            std::cout << need[i][j] << " ";
+        }
+        std::cout << std::endl;
     }
 }
 
-void Reader(int id) {
-    while (!exitRequested) {
-        sem_wait(&semaphore);
-        {
-            lock_guard<mutex> lock(console_mutex);
-            cout << "Читатель " << id << " читает: " << sharedResource << endl;
+// Функция для проверки безопасности
+bool is_safe_state() {
+    std::vector<bool> finish(NUM_PROCESSES, false);
+    std::vector<int> work = available;
+    int count = 0;
+
+    while (count < NUM_PROCESSES) {
+        bool found = false;
+        for (int i = 0; i < NUM_PROCESSES; ++i) {
+            if (!finish[i]) {
+                bool can_allocate = true;
+                for (int j = 0; j < NUM_RESOURCES; ++j) {
+                    if (need[i][j] > work[j]) {
+                        can_allocate = false;
+                        break;
+                    }
+                }
+
+                if (can_allocate) {
+                    for (int j = 0; j < NUM_RESOURCES; ++j) {
+                        work[j] += allocation[i][j];
+                    }
+                    finish[i] = true;
+                    found = true;
+                    count++;
+                }
+            }
         }
-        sem_post(&semaphore);
-        this_thread::sleep_for(chrono::milliseconds(50));
+
+        if (!found) {
+            return false;
+        }
     }
+
+    return true;
+}
+
+// Функция для запроса ресурсов
+void request_resources(int process_id, const std::vector<int>& request) {
+    std::unique_lock<std::mutex> lock(mtx);
+
+    bool can_allocate = true;
+    for (int i = 0; i < NUM_RESOURCES; ++i) {
+        if (request[i] > need[process_id][i]) {
+            std::cout << "Процесс " << process_id << " превысило максимально возможное требование." << std::endl;
+            can_allocate = false;
+            break;
+        }
+    }
+
+    if (can_allocate) {
+        for (int i = 0; i < NUM_RESOURCES; ++i) {
+            if (request[i] > available[i]) {
+                std::cout << "Процесс " << process_id << " необходимо подождать, ресурсов не хватает." << std::endl;
+                can_allocate = false;
+                break;
+            }
+        }
+    }
+
+    if (can_allocate) {
+        for (int i = 0; i < NUM_RESOURCES; ++i) {
+            available[i] -= request[i];
+            allocation[process_id][i] += request[i];
+            need[process_id][i] -= request[i];
+        }
+
+        if (is_safe_state()) {
+            std::cout << "Процесс " << process_id << " ресурсы выделены." << std::endl;
+        } else {
+            std::cout << "Процесс " << process_id << " необходимо подождать, система не в безопасном состоянии." << std::endl;
+            for (int i = 0; i < NUM_RESOURCES; ++i) {
+                available[i] += request[i];
+                allocation[process_id][i] -= request[i];
+                need[process_id][i] += request[i];
+            }
+        }
+    }
+
+    cv.notify_all();
+}
+
+// Функция для каждого процесса
+void process_function(int process_id) {
+    std::vector<int> request(NUM_RESOURCES, 0);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 5);
+
+    for (int i = 0; i < NUM_RESOURCES; ++i) {
+        request[i] = dis(gen);
+    }
+
+    request_resources(process_id, request);
 }
 
 int main() {
+    initialize();
 
-    sem_init(&semaphore, 0, 1); //0 - указывает, что семафор используется для потоков
-    //1 - устанавливает начальное значение семафора в 1, что означает, что изначально он разрешает доступ (семафор открыт)
-
-    thread readers[20]; // создание массивов потоков для читателей и писателей
-    thread writers[20];
-
-    for (int i = 0; i < 20; ++i) { // запуск потоков
-        readers[i] = thread(Reader, i);
-        writers[i] = thread(Writer, i);
+    std::vector<std::thread> threads;
+    for (int i = 0; i < NUM_PROCESSES; ++i) {
+        threads.push_back(std::thread(process_function, i));
     }
 
-    this_thread::sleep_for(chrono::milliseconds(1000));
-    exitRequested = true; // установка флага выхода
-
-    for (auto& reader : readers) { // ожидание завершения потоков
-        reader.join();
+    for (auto& t : threads) {
+        t.join();
     }
 
-    for (auto& writer : writers) {
-        writer.join();
-    }
-
-    cout << "Главный поток завершил работу" << endl;
-    sem_destroy(&semaphore); // уничтожение семафора
     return 0;
 }
