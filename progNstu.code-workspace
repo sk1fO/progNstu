@@ -65,7 +65,18 @@
 			"typeinfo": "cpp",
 			"valarray": "cpp",
 			"variant": "cpp",
-			"list": "cpp"
+			"list": "cpp",
+			"barrier": "cpp",
+			"bitset": "cpp",
+			"charconv": "cpp",
+			"chrono": "cpp",
+			"condition_variable": "cpp",
+			"regex": "cpp",
+			"format": "cpp",
+			"mutex": "cpp",
+			"semaphore": "cpp",
+			"stop_token": "cpp",
+			"thread": "cpp"
 		}
 	}
 }

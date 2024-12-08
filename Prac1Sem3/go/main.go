@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 )
@@ -161,44 +160,142 @@ func cross_join() {
 }
 
 func SELECT(table_column []string, tables []string) {
+
+	temp := dbNew()
+	//selected := dbNew()
+
 	if len(tables) > 1 {
-		for _, i := range table_column {
-			tableSlice := strings.Split(i, ".")
-			table := tableSlice[0]
-			col := tableSlice[1]
-
-			if slices.Contains(config.Structure[table], col) {
-				// если больше 1 таблицы - кросс джоин, иначе запись всей таблицы в темп
-
-			} else {
-				fmt.Println("Ошибка, неверная колонка ", col)
-			}
-		}
+		cross_join()
 	} else {
-		tableSlice := strings.Split(table_column[0], ".")
-		table := tableSlice[0]
-		col := tableSlice[1]
-		if slices.Contains(config.Structure[table], col) {
-			file, err := os.Open(pathToMax(table))
-			if err != nil {
-				panic(err)
-			}
-			reader := csv.NewReader(file)
-			allRecs, _ := reader.ReadAll()
-			col_num := 0
-			for j, i := range config.Structure[table] {
-				if i == col {
-					col_num = j
-				}
-			}
-
-			for _, records := range allRecs {
-				fmt.Println(records[col_num])
-			}
-		} else {
-			fmt.Println("Ошибка, неверная колонка ", col)
+		path := CreatePath(tables[0])
+		// считываем список файлов в директории
+		lst, err := os.ReadDir(path)
+		if err != nil {
+			panic(err)
 		}
+		for _, file := range lst {
+			temp.readCSV(path + "/" + file.Name())
+		}
+		temp.Print()
 	}
+}
+
+type dbNode struct {
+	value []string
+	next  *dbNode
+}
+
+type db struct {
+	len  int
+	head *dbNode
+}
+
+// инициализация базы данных
+func dbNew() *db {
+	return &db{}
+}
+
+// деструктор
+func (db *db) delete() { // если на объект нет указателй
+	db.head = nil // то сборщик мусора удалит объект
+	db.len = 0    // поэтому можно просто хед = нил
+}
+
+// добавление в конец
+func (db *db) Push(_value []string) {
+	node := &dbNode{ // создаем новый узел
+		value: _value, // присваиваем значение
+	} // указатель на некст по умолчанию нил
+
+	if db.head == nil { // если узел единственный
+		db.head = node // то он и есть хед
+	} else { // иначе ищем последний узел
+		current := db.head
+		for current.next != nil {
+			current = current.next
+		}
+		current.next = node // присваиваем ему значение
+	}
+	db.len++
+}
+
+// удаление последнего элемента
+func (db *db) Pop() error {
+	if db.head == nil { // обрабатываем ошибку
+		return fmt.Errorf("database is empty")
+	}
+
+	var prev *dbNode   // сохраняем указатель на прошлый узел
+	current := db.head //
+
+	for current.next != nil { // в цикле ищем последний
+		prev = current
+		current = current.next
+	}
+
+	if prev != nil { // переподвязываем узлы
+		prev.next = nil
+	} else {
+		db.head = nil
+	}
+	db.len-- // уменьшаем длину
+	return nil
+}
+
+// функция распечатки
+func (db *db) Print() { // нужна для дебага
+	if db.head == nil { // проверка на пустоту
+		fmt.Println("database is empty")
+		return
+	}
+
+	current := db.head
+	for current != nil { // в цикле проходим все значения
+		fmt.Println(current.value) // печатаем их
+		current = current.next
+	}
+}
+
+// функция записи стркутуры в csv файл
+func (db *db) writeCSV(path string) error {
+	if db.head == nil {
+		return fmt.Errorf("database is empty")
+	}
+
+	var toWrite [][]string
+	current := db.head
+	for current != nil {
+		toWrite = append(toWrite, current.value)
+		current = current.next
+	}
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, os.ModeAppend)
+	if err != nil {
+		return err
+	}
+
+	w := csv.NewWriter(f)
+	w.WriteAll(toWrite)
+	return nil
+}
+
+// функция чтения структуры из файла
+func (db *db) readCSV(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+
+	r := csv.NewReader(f)
+	recs, err := r.ReadAll()
+	if err != nil {
+		return err
+	}
+
+	for _, rec := range recs {
+		db.Push(rec)
+	}
+	return nil
 }
 
 func init() {
