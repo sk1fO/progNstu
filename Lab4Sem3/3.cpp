@@ -3,25 +3,26 @@
 #include <vector>
 #include <mutex>
 #define MAX 20
+
 using namespace std;
 
-class Bankers
+class BankersAlgorithm
 {
 private:
-    int al[MAX][MAX], m[MAX][MAX], n[MAX][MAX], avail[MAX]; // Матрицы текущих, максимума, нужды и доступные ресурсы
-    int nop, nor, k, result[MAX], pnum, work[MAX], finish[MAX]; // Число процессов, ресурсов, индекс результата, результат, номер процесса, рабочий массив, завершенные процессы
-    mutex mtx; // Мьютекс для синхронизации доступа к общим ресурсам
+    int al[MAX][MAX], m[MAX][MAX], n[MAX][MAX], avail[MAX];
+    int nop, nor, k, result[MAX], pnum, work[MAX], finish[MAX];
+    mutex mtx;
 
 public:
-    Bankers(); // Конструктор класса
-    void input(); // Ввод данных
-    void method(); // Основной метод алгоритма банкира
-    int search(int); // Поиск подходящего процесса
-    void display(); // Вывод результатов
-    void process(int i); // Обработка процесса в отдельном потоке
+    BankersAlgorithm();
+    void input();
+    void method();
+    int search(int);
+    void display();
+    void check_process(int i);
 };
 
-Bankers::Bankers()
+BankersAlgorithm::BankersAlgorithm()
 {
     k = 0;
     for (int i = 0; i < MAX; i++)
@@ -36,10 +37,9 @@ Bankers::Bankers()
         result[i] = 0;
         finish[i] = 0;
     }
-    // Инициализация всех значений нулями
 }
 
-void Bankers::input()
+void BankersAlgorithm::input()
 {
     int i, j;
     cout << "Введите количество процессов: ";
@@ -56,7 +56,7 @@ void Bankers::input()
             cin >> al[i][j];
         }
     }
-    cout << "Введите максимальные ресурсы, которые нужны каждому процессу: " << endl;
+    cout << "Введите максимальные ресурсы, необходимые для каждого процесса: " << endl;
     for (i = 0; i < nop; i++)
     {
         cout << "\nПроцесс " << i;
@@ -64,7 +64,7 @@ void Bankers::input()
         {
             cout << "\nРесурс " << j << ": ";
             cin >> m[i][j];
-            n[i][j] = m[i][j] - al[i][j]; // Вычисление нужных ресурсов
+            n[i][j] = m[i][j] - al[i][j];
         }
     }
     cout << "Введите текущие доступные ресурсы в системе: ";
@@ -75,89 +75,92 @@ void Bankers::input()
         work[j] = -1;
     }
     for (i = 0; i < nop; i++)
-        finish[i] = 0; // Все процессы изначально не завершены
+        finish[i] = 0;
 }
 
-void Bankers::process(int i)
+void BankersAlgorithm::check_process(int i)
 {
-    unique_lock<mutex> lock(mtx); // Блокировка мьютекса для синхронизации
     if (finish[i] == 0)
     {
         pnum = search(i);
         if (pnum != -1)
         {
-            result[k++] = i; // Добавление процесса в результат
-            finish[i] = 1; // Пометка процесса как завершенного
+            mtx.lock();
+            result[k++] = i;
+            finish[i] = 1;
             for (int j = 0; j < nor; j++)
             {
-                avail[j] += al[i][j]; // Обновление доступных ресурсов
+                avail[j] = avail[j] + al[i][j];
             }
+            mtx.unlock();
         }
     }
-    lock.unlock(); // Разблокировка мьютекса
 }
 
-int Bankers::search(int i)
+void BankersAlgorithm::method()
+{
+    vector<thread> threads;
+    int flag;
+
+    while (true)
+    {
+        flag = 0;
+        for (int i = 0; i < nop; i++)
+        {
+            threads.emplace_back(&BankersAlgorithm::check_process, this, i);
+        }
+
+        for (auto &th : threads)
+        {
+            th.join();
+        }
+        threads.clear();
+
+        for (int j = 0; j < nor; j++)
+        {
+            if (avail[j] != work[j])
+                flag = 1;
+        }
+
+        for (int j = 0; j < nor; j++)
+        {
+            work[j] = avail[j];
+        }
+
+        if (flag == 0)
+            break;
+    }
+}
+
+int BankersAlgorithm::search(int i)
 {
     for (int j = 0; j < nor; j++)
+    {
         if (n[i][j] > avail[j])
-            return -1; // Если нужные ресурсы превышают доступные, процесс не может быть выполнен
+            return -1;
+    }
     return 0;
 }
 
-void Bankers::method()
-{
-    vector<thread> threads;
-    for (int i = 0; i < nop; i++)
-    {
-        threads.emplace_back(&Bankers::process, this, i); // Создание потока для каждого процесса
-    }
-
-    for (auto &t : threads)
-    {
-        t.join(); // Ожидание завершения всех потоков
-    }
-
-    // Проверка, завершены ли все процессы
-    bool flag = true;
-    for (int i = 0; i < nop; i++)
-    {
-        if (finish[i] == 0)
-        {
-            flag = false;
-            break;
-        }
-    }
-
-    if (!flag)
-    {
-        cout << "Система не находится в безопасном состоянии, возможен deadlock!" << endl;
-    }
-    else
-    {
-        cout << "Система находится в безопасном состоянии, deadlock невозможен!" << endl;
-    }
-}
-
-void Bankers::display()
+void BankersAlgorithm::display()
 {
     int i, j;
-    cout << endl << "ВЫВОД:";
-    cout << endl << "========";
-    cout << endl << "ПРОЦЕСС\t     ВЫДЕЛЕННЫЕ\t     МАКСИМАЛЬНЫЕ\tНУЖНЫЕ";
+    cout << endl << "ВЫХОДНЫЕ ДАННЫЕ:";
+    cout << endl << "=================";
+    cout << endl << "ПРОЦЕСС\t\tВЫДЕЛЕНО\tМАКСИМУМ\tПОТРЕБНОСТЬ";
     for (i = 0; i < nop; i++)
     {
-        cout << "\nP" << i + 1 << "\t     ";
+        cout << "\nP" << i + 1 << "\t\t";
         for (j = 0; j < nor; j++)
         {
             cout << al[i][j] << "  ";
         }
-        cout << "\t     ";
+        cout << "\t";
         for (j = 0; j < nor; j++)
         {
             cout << m[i][j] << "  ";
         }
-        cout << "\t     ";
+        cout << "\t";
         for (j = 0; j < nor; j++)
         {
             cout << n[i][j] << "  ";
@@ -180,19 +183,20 @@ void Bankers::display()
         cout << "P" << i << " ";
     }
     cout << endl << "РЕЗУЛЬТАТ:";
-    cout << endl << "=======";
+    cout << endl << "===========";
     if (flg == 1)
-        cout << endl << "Система не находится в безопасном состоянии, возможен deadlock!";
+        cout << endl << "Система не находится в безопасном состоянии, возможен дедлок!";
     else
-        cout << endl << "Система находится в безопасном состоянии, deadlock невозможен!";
+        cout << endl << "Система находится в безопасном состоянии, дедлок не произойдет!";
 }
 
 int main()
 {
-    cout << " АЛГОРИТМ БАНКИРА ДЛЯ ПРЕДОТВРАЩЕНИЯ ДЕДЛОКА " << endl;
-    Bankers B;
+    cout << "АЛГОРИТМ БАНКИРА ДЛЯ ПРЕДОТВРАЩЕНИЯ ДЕДЛОКА" << endl;
+    BankersAlgorithm B;
     B.input();
     B.method();
     B.display();
-    cout << endl;
+
+    return 0;
 }
