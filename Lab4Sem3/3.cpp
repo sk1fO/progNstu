@@ -2,30 +2,32 @@
 #include <thread>
 #include <vector>
 #include <mutex>
-#define MAX 20
+#define MAX 20 // Максимальное число процессов и ресурсов
 
 using namespace std;
 
+// Класс реализующий алгоритм Банкера для предотвращения дедлока
 class BankersAlgorithm
 {
 private:
-    int al[MAX][MAX], m[MAX][MAX], n[MAX][MAX], avail[MAX];
-    int nop, nor, k, result[MAX], pnum, work[MAX], finish[MAX];
-    mutex mtx;
+    int al[MAX][MAX], m[MAX][MAX], n[MAX][MAX], avail[MAX]; // Матрицы для хранения информации о ресурсах
+    int nop, nor, k, result[MAX], pnum, work[MAX], finish[MAX]; // Переменные для работы алгоритма
+    mutex mtx; // Мьютекс для синхронизации потоков
 
 public:
-    BankersAlgorithm();
-    void input();
-    void method();
-    int search(int);
-    void display();
-    void check_process(int i);
+    BankersAlgorithm(); // Конструктор класса
+    void input(); // Функция для ввода данных пользователем
+    void method(); // Основной метод алгоритма Банкера
+    int search(int); // Метод поиска процесса, который может быть завершен
+    void display(); // Функция для отображения результатов
+    void check_process(int i); // Метод для проверки возможности завершения процесса
 };
 
+// Конструктор класса
 BankersAlgorithm::BankersAlgorithm()
 {
-    k = 0;
-    for (int i = 0; i < MAX; i++)
+    k = 0; // Начальное значение количества завершенных процессов
+    for (int i = 0; i < MAX; i++) // Инициализация всех матриц и массивов нулями
     {
         for (int j = 0; j < MAX; j++)
         {
@@ -39,6 +41,7 @@ BankersAlgorithm::BankersAlgorithm()
     }
 }
 
+// Функция для ввода данных пользователем
 void BankersAlgorithm::input()
 {
     int i, j;
@@ -78,28 +81,30 @@ void BankersAlgorithm::input()
         finish[i] = 0;
 }
 
+// Метод для проверки возможности завершения процесса
 void BankersAlgorithm::check_process(int i)
 {
-    if (finish[i] == 0)
+    if (finish[i] == 0) // Если процесс еще не завершен
     {
-        pnum = search(i);
+        pnum = search(i); // Проверяем, можно ли завершить процесс
         if (pnum != -1)
         {
-            mtx.lock();
-            result[k++] = i;
-            finish[i] = 1;
+            mtx.lock(); // Заблокируем мьютекс для синхронизации
+            result[k++] = i; // Добавляем процесс в список завершенных
+            finish[i] = 1; // Отметим процесс как завершенный
             for (int j = 0; j < nor; j++)
             {
-                avail[j] = avail[j] + al[i][j];
+                avail[j] = avail[j] + al[i][j]; // Обновляем доступные ресурсы
             }
-            mtx.unlock();
+            mtx.unlock(); // Разблокируем мьютекс
         }
     }
 }
 
+// Основной метод алгоритма Банкера
 void BankersAlgorithm::method()
 {
-    vector<thread> threads;
+    vector<thread> threads; // Вектор для хранения потоков
     int flag;
 
     while (true)
@@ -107,24 +112,24 @@ void BankersAlgorithm::method()
         flag = 0;
         for (int i = 0; i < nop; i++)
         {
-            threads.emplace_back(&BankersAlgorithm::check_process, this, i);
+            threads.emplace_back(&BankersAlgorithm::check_process, this, i); // Создаем потоки для проверки процессов
         }
 
         for (auto &th : threads)
         {
-            th.join();
+            th.join(); // Ждем завершения всех потоков
         }
         threads.clear();
 
         for (int j = 0; j < nor; j++)
         {
-            if (avail[j] != work[j])
+            if (avail[j] != work[j]) // Проверяем, изменились ли доступные ресурсы
                 flag = 1;
         }
 
         for (int j = 0; j < nor; j++)
         {
-            work[j] = avail[j];
+            work[j] = avail[j]; // Обновляем рабочую копию доступных ресурсов
         }
 
         if (flag == 0)
@@ -132,16 +137,18 @@ void BankersAlgorithm::method()
     }
 }
 
+// Метод поиска процесса, который может быть завершен
 int BankersAlgorithm::search(int i)
 {
     for (int j = 0; j < nor; j++)
     {
-        if (n[i][j] > avail[j])
+        if (n[i][j] > avail[j]) // Если потребность процесса больше доступных ресурсов
             return -1;
     }
     return 0;
 }
 
+// Функция для отображения результатов
 void BankersAlgorithm::display()
 {
     int i, j;
@@ -153,24 +160,24 @@ void BankersAlgorithm::display()
         cout << "\nP" << i + 1 << "\t\t";
         for (j = 0; j < nor; j++)
         {
-            cout << al[i][j] << "  ";
+            cout << al[i][j] << "  "; // Выделенные ресурсы
         }
         cout << "\t";
         for (j = 0; j < nor; j++)
         {
-            cout << m[i][j] << "  ";
+            cout << m[i][j] << "  "; // Максимальные ресурсы
         }
         cout << "\t";
         for (j = 0; j < nor; j++)
         {
-            cout << n[i][j] << "  ";
+            cout << n[i][j] << "  "; // Требуемые ресурсы
         }
     }
     cout << "\nПоследовательность безопасных процессов: \n";
     for (i = 0; i < k; i++)
     {
         int temp = result[i] + 1;
-        cout << "P" << temp << " ";
+        cout << "P" << temp << " "; // Последовательность безопасных процессов
     }
     cout << "\nПоследовательность небезопасных процессов: \n";
     int flg = 0;
@@ -178,16 +185,16 @@ void BankersAlgorithm::display()
     {
         if (finish[i] == 0)
         {
-            flg = 1;
+            flg = 1; // Есть небезопасные процессы
         }
         cout << "P" << i << " ";
     }
     cout << endl << "РЕЗУЛЬТАТ:";
     cout << endl << "===========";
     if (flg == 1)
-        cout << endl << "Система не находится в безопасном состоянии, возможен дедлок!";
+        cout << endl << "Система не находится в безопасном состоянии, возможен дедлок!"; 
     else
-        cout << endl << "Система находится в безопасном состоянии, дедлок не произойдет!";
+        cout << endl << "Система находится в безопасном состоянии, дедлок не произойдет!"; 
 }
 
 int main()
