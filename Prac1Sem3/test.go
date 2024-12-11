@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,34 +13,34 @@ import (
 	"sync"
 )
 
-// Define the schema structure
+// Определение структуры схемы
 type Schema struct {
-	Name       string              `json:"name"`
-	TupleLimit int                 `json:"tuples_limit"`
-	Structure  map[string][]string `json:"structure"`
+	Name       string              `json:"name"`         // Имя схемы
+	TupleLimit int                 `json:"tuples_limit"` // Лимит строк в файле
+	Structure  map[string][]string `json:"structure"`    // Структура таблиц
 }
 
-// Define the table structure
+// Определение структуры таблицы
 type Table struct {
-	Name         string
-	Columns      []string
-	PrimaryKey   string
-	SequenceFile string
-	LockFile     string
-	Files        []string
-	Lock         *sync.Mutex
+	Name         string      // Имя таблицы
+	Columns      []string    // Список столбцов
+	PrimaryKey   string      // Первичный ключ
+	SequenceFile string      // Файл последовательности для первичного ключа
+	LockFile     string      // Файл блокировки
+	Files        []string    // Список файлов CSV
+	Lock         *sync.Mutex // Мьютекс для блокировки таблицы
 }
 
-// Define the database structure
+// Определение структуры базы данных
 type Database struct {
-	Name       string
-	TupleLimit int
-	Tables     map[string]*Table
+	Name       string            // Имя базы данных
+	TupleLimit int               // Лимит строк в файле
+	Tables     map[string]*Table // Список таблиц
 }
 
-// Read the schema configuration
+// Чтение конфигурации схемы
 func readSchema(filePath string) (*Schema, error) {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +51,7 @@ func readSchema(filePath string) (*Schema, error) {
 	return &schema, nil
 }
 
-// Create the necessary directories and files based on the schema
+// Создание необходимых директорий и файлов на основе схемы
 func createDatabase(schema *Schema) (*Database, error) {
 	db := &Database{
 		Name:       schema.Name,
@@ -75,21 +74,21 @@ func createDatabase(schema *Schema) (*Database, error) {
 		sequenceFile := filepath.Join(tableDir, fmt.Sprintf("%s_sequence", tableName))
 		lockFile := filepath.Join(tableDir, fmt.Sprintf("%s_lock", tableName))
 
-		// Initialize sequence file
+		// Инициализация файла последовательности
 		if _, err := os.Stat(sequenceFile); os.IsNotExist(err) {
-			if err := ioutil.WriteFile(sequenceFile, []byte("0"), 0644); err != nil {
+			if err := os.WriteFile(sequenceFile, []byte("0"), 0644); err != nil {
 				return nil, err
 			}
 		}
 
-		// Initialize lock file
+		// Инициализация файла блокировки
 		if _, err := os.Stat(lockFile); os.IsNotExist(err) {
-			if err := ioutil.WriteFile(lockFile, []byte("false"), 0644); err != nil {
+			if err := os.WriteFile(lockFile, []byte("false"), 0644); err != nil {
 				return nil, err
 			}
 		}
 
-		// Initialize first CSV file
+		// Инициализация первого CSV файла
 		csvFile := filepath.Join(tableDir, "1.csv")
 		if _, err := os.Stat(csvFile); os.IsNotExist(err) {
 			file, err := os.Create(csvFile)
@@ -116,11 +115,11 @@ func createDatabase(schema *Schema) (*Database, error) {
 	return db, nil
 }
 
-// Implement the SELECT statement
+// Реализация операции SELECT
 func selectData(db *Database, query string) ([][]string, error) {
 	parts := strings.Split(query, " ")
 	if len(parts) < 4 || parts[2] != "FROM" {
-		return nil, fmt.Errorf("invalid SELECT command. Usage: SELECT <columns> FROM <tables>")
+		return nil, fmt.Errorf("неверная команда SELECT. Использование: SELECT <столбцы> FROM <таблицы>")
 	}
 
 	selectCols := strings.Split(parts[1], ",")
@@ -131,7 +130,7 @@ func selectData(db *Database, query string) ([][]string, error) {
 	for _, table := range fromTables {
 		tbl, ok := db.Tables[table]
 		if !ok {
-			return nil, fmt.Errorf("table %s does not exist", table)
+			return nil, fmt.Errorf("таблица %s не существует", table)
 		}
 
 		for _, file := range tbl.Files {
@@ -140,7 +139,7 @@ func selectData(db *Database, query string) ([][]string, error) {
 				return nil, err
 			}
 
-			for _, row := range rows[1:] { // Skip header
+			for _, row := range rows[1:] { // Пропускаем заголовок
 				var selectedRow []string
 				for _, col := range selectCols {
 					colParts := strings.Split(col, ".")
@@ -165,7 +164,7 @@ func selectData(db *Database, query string) ([][]string, error) {
 	return result, nil
 }
 
-// Implement the WHERE clause
+// Реализация операции WHERE
 func whereClause(rows [][]string, conditions string) [][]string {
 	var header []string = rows[0]
 	var result [][]string
@@ -177,16 +176,16 @@ func whereClause(rows [][]string, conditions string) [][]string {
 	return result
 }
 
-// Evaluate the WHERE condition
+// Оценка условия WHERE
 func evaluateCondition(header, row []string, conditions string) bool {
-	// Simple evaluation for equality
+	// Простая оценка равенства
 	parts := strings.Split(conditions, "=")
 	col := parts[0]
 	value := parts[1]
 
 	colParts := strings.Split(col, ".")
 	idx := -1
-	for i, c := range header { // from header!!!
+	for i, c := range header { // из заголовка!!!
 		if c == colParts[1] {
 			idx = i
 			break
@@ -200,26 +199,26 @@ func evaluateCondition(header, row []string, conditions string) bool {
 	return false
 }
 
-// Implement the INSERT statement
+// Реализация операции INSERT
 func insertData(db *Database, table string, values []string) error {
 	tbl, ok := db.Tables[table]
 	if !ok {
-		return fmt.Errorf("table %s does not exist", table)
+		return fmt.Errorf("таблица %s не существует", table)
 	}
 
 	tbl.Lock.Lock()
 	defer tbl.Lock.Unlock()
 
-	// Get next primary key
+	// Получение следующего первичного ключа
 	seq, err := getNextSequence(tbl.SequenceFile)
 	if err != nil {
 		return err
 	}
 
-	// Append primary key to values
+	// Добавление первичного ключа к значениям
 	values = append([]string{strconv.Itoa(seq)}, values...)
 
-	// Determine which file to write to
+	// Определение файла, в который нужно записать данные
 	lastFile := tbl.Files[len(tbl.Files)-1]
 	rows, err := readCSV(lastFile)
 	if err != nil {
@@ -227,7 +226,7 @@ func insertData(db *Database, table string, values []string) error {
 	}
 
 	if len(rows) >= db.TupleLimit {
-		// Create a new file
+		// Создание нового файла
 		newFile := filepath.Join(filepath.Dir(lastFile), fmt.Sprintf("%d.csv", len(tbl.Files)+1))
 		file, err := os.Create(newFile)
 		if err != nil {
@@ -240,7 +239,7 @@ func insertData(db *Database, table string, values []string) error {
 		file.Close()
 		tbl.Files = append(tbl.Files, newFile)
 	} else {
-		// Write to the last file
+		// Запись в последний файл
 		file, err := os.OpenFile(lastFile, os.O_APPEND|os.O_WRONLY, 0644)
 		if err != nil {
 			return err
@@ -254,9 +253,9 @@ func insertData(db *Database, table string, values []string) error {
 	return nil
 }
 
-// Get the next sequence number
+// Получение следующего номера последовательности
 func getNextSequence(file string) (int, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return 0, err
 	}
@@ -265,17 +264,17 @@ func getNextSequence(file string) (int, error) {
 		return 0, err
 	}
 	seq++
-	if err := ioutil.WriteFile(file, []byte(strconv.Itoa(seq)), 0644); err != nil {
+	if err := os.WriteFile(file, []byte(strconv.Itoa(seq)), 0644); err != nil {
 		return 0, err
 	}
 	return seq, nil
 }
 
-// Implement the DELETE statement
+// Реализация операции DELETE
 func deleteData(db *Database, table string, conditions string) error {
 	tbl, ok := db.Tables[table]
 	if !ok {
-		return fmt.Errorf("table %s does not exist", table)
+		return fmt.Errorf("таблица %s не существует", table)
 	}
 
 	tbl.Lock.Lock()
@@ -288,7 +287,7 @@ func deleteData(db *Database, table string, conditions string) error {
 		}
 
 		header := rows[0]
-		newRows := [][]string{header} // Keep the header
+		newRows := [][]string{header} // Оставляем заголовок
 
 		for _, row := range rows[1:] {
 			if !evaluateCondition(header, row, conditions) {
@@ -296,15 +295,15 @@ func deleteData(db *Database, table string, conditions string) error {
 			}
 		}
 
-		// If the file becomes empty after deletion, remove it
+		// Если файл становится пустым после удаления, удаляем его
 		if len(newRows) == 1 {
 			if err := os.Remove(file); err != nil {
 				return err
 			}
-			// Remove the file from the list
+			// Удаляем файл из списка
 			tbl.Files = append(tbl.Files[:i], tbl.Files[i+1:]...)
 		} else {
-			// Write the new rows back to the file
+			// Запись новых строк обратно в файл
 			file, err := os.Create(file)
 			if err != nil {
 				return err
@@ -324,7 +323,7 @@ func deleteData(db *Database, table string, conditions string) error {
 	return nil
 }
 
-// Read CSV file
+// Чтение CSV файла
 func readCSV(file string) ([][]string, error) {
 	f, err := os.Open(file)
 	if err != nil {
@@ -341,30 +340,30 @@ func readCSV(file string) ([][]string, error) {
 	return records, nil
 }
 
-// Main function to start the database
+// Главная функция для запуска базы данных
 func main() {
-	// Read the schema configuration
+	// Чтение конфигурации схемы
 	schema, err := readSchema("schema.json")
 	if err != nil {
-		log.Fatalf("Failed to read schema: %v", err)
+		log.Fatalf("Не удалось прочитать схему: %v", err)
 	}
 
-	// Create the database
+	// Создание базы данных
 	db, err := createDatabase(schema)
 	if err != nil {
-		log.Fatalf("Failed to create database: %v", err)
+		log.Fatalf("Не удалось создать базу данных: %v", err)
 	}
 
-	// Console menu for direct SQL command input
+	// Консольное меню для ввода команд SQL
 	for {
-		fmt.Print("\nEnter an SQL command (or 'exit' to quit): ")
+		fmt.Print("\nВведите команду SQL (или 'exit' для выхода): ")
 
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
 		command := scanner.Text()
 
 		if command == "exit" {
-			fmt.Println("Exiting...")
+			fmt.Println("Выход...")
 			return
 		}
 
@@ -373,26 +372,26 @@ func main() {
 		switch parts[0] {
 		case "INSERT":
 			if len(parts) < 5 || parts[1] != "INTO" || parts[3] != "VALUES" {
-				fmt.Println("Invalid INSERT command. Usage: INSERT INTO <table> VALUES (<values>)")
+				fmt.Println("Неверная команда INSERT. Использование: INSERT INTO <таблица> VALUES (<значения>)")
 				continue
 			}
 			table := parts[2]
 			values := strings.Trim(parts[4], "()")
 			valuesList := strings.Split(values, ",")
 			if err := insertData(db, table, valuesList); err != nil {
-				fmt.Println("Error inserting data:", err)
+				fmt.Println("Ошибка при вставке данных:", err)
 			} else {
-				fmt.Println("Data inserted successfully.")
+				fmt.Println("Данные успешно вставлены.")
 			}
 		case "SELECT":
 			if len(parts) < 3 || parts[2] != "FROM" {
-				fmt.Println("Invalid SELECT command. Usage: SELECT <columns> FROM <tables>")
+				fmt.Println("Неверная команда SELECT. Использование: SELECT <столбцы> FROM <таблицы>")
 				continue
 			}
 			query := strings.Join(parts, " ")
 			result, err := selectData(db, query)
 			if err != nil {
-				fmt.Println("Error selecting data:", err)
+				fmt.Println("Ошибка при выборке данных:", err)
 			} else {
 				for _, row := range result {
 					fmt.Println(row)
@@ -400,7 +399,7 @@ func main() {
 			}
 		case "DELETE":
 			if len(parts) < 4 || parts[1] != "FROM" {
-				fmt.Println("Invalid DELETE command. Usage: DELETE FROM <table> [WHERE <conditions>]")
+				fmt.Println("Неверная команда DELETE. Использование: DELETE FROM <таблица> [WHERE <условия>]")
 				continue
 			}
 			table := parts[2]
@@ -409,12 +408,12 @@ func main() {
 				conditions = strings.Join(parts[4:], " ")
 			}
 			if err := deleteData(db, table, conditions); err != nil {
-				fmt.Println("Error deleting data:", err)
+				fmt.Println("Ошибка при удалении данных:", err)
 			} else {
-				fmt.Println("Data deleted successfully.")
+				fmt.Println("Данные успешно удалены.")
 			}
 		default:
-			fmt.Println("Unknown command. Supported commands: INSERT, SELECT, DELETE, exit")
+			fmt.Println("Неизвестная команда. Поддерживаемые команды: INSERT, SELECT, DELETE, exit")
 		}
 	}
 }
