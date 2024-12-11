@@ -57,7 +57,7 @@ func main() {
 	case "LDELVALUE":
 		handleListRemoveValue(args) // Удаление элемента по значению
 	case "LFINDVALUE":
-		handleListFindValue(args) // Поиск элемента по значению
+		handleListFindValue(args) // Наличие элемента по значению
 
 	case "QPUSH":
 		handleQueuePush(args) // Добавление элемента в очередь
@@ -510,6 +510,6 @@ func saveToFile(file string) {
 	}
 
 	if err := os.WriteFile(file, jsonData, 0777); err != nil {
-		log.Fatalf("Failed to write file: %v", err) // Обработка ошибки записи файла
+		log.Fatalf("Failed to write file: %v", err) // Обработка ошибки записи файла. 0777 - rwx
 	}
 }
