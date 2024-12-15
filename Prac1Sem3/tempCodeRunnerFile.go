@@ -1,1 +1,0 @@
-rpnConditions, err := toRPN(strings.Join(parts[5:], " "), tbl.Columns)

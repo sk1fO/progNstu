@@ -1,63 +1,92 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"unsafe"
+)
 
-// структура данных массива
+const maxSize = 100 // Максимальный размер массива
+
+// Array структура для представления массива
 type Array struct {
-	data []interface{} // Поле для хранения элементов массива
+	data   unsafe.Pointer // Указатель на данные массива
+	length int            // Текущая длина массива
 }
 
-// создает и возвращает новый пустой массив
+// NewArray создает новый массив
 func NewArray() *Array {
-	return &Array{data: make([]interface{}, 0)}
+	data := make([]interface{}, maxSize) // Создаем фиксированный массив с максимальным размером
+	return &Array{
+		data:   unsafe.Pointer(&data[0]), // Преобразуем массив в указатель
+		length: 0,                        // Начальная длина массива
+	}
 }
 
-// добавляет элемент в массив по указанному индексу
-func (a *Array) AddAtIndex(index int, value interface{}) error {
-	if index < 0 || index > len(a.data) {
-		return fmt.Errorf("index out of bounds") // Проверка на выход за границы массива
+// AddToEnd добавляет элемент в конец массива
+func (a *Array) AddToEnd(element interface{}) error {
+	if a.length >= maxSize { // Проверяем, не переполнен ли массив
+		return errors.New("массив переполнен")
 	}
-	a.data = append(a.data[:index], append([]interface{}{value}, a.data[index:]...)...)
+	*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(a.length)*unsafe.Sizeof(interface{}(nil)))) = element // Добавляем элемент в конец массива
+	a.length++                                                                                                     // Увеличиваем длину массива
 	return nil
 }
 
-// добавляет элемент в конец массива
-func (a *Array) AddToEnd(value interface{}) {
-	a.data = append(a.data, value)
+// AddAtIndex добавляет элемент по указанному индексу
+func (a *Array) AddAtIndex(index int, element interface{}) error {
+	if index < 0 || index > a.length { // Проверяем, допустим ли индекс
+		return errors.New("недопустимый индекс")
+	}
+	if a.length >= maxSize { // Проверяем, не переполнен ли массив
+		return errors.New("массив переполнен")
+	}
+	for i := a.length; i > index; i-- { // Сдвигаем элементы вправо, начиная с конца
+		*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i)*unsafe.Sizeof(interface{}(nil)))) = *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i-1)*unsafe.Sizeof(interface{}(nil))))
+	}
+	*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(index)*unsafe.Sizeof(interface{}(nil)))) = element // Вставляем элемент по указанному индексу
+	a.length++                                                                                                  // Увеличиваем длину массива
+	return nil
 }
 
-// возвращает элемент массива по указанному индексу
+// Get получает элемент по указанному индексу
 func (a *Array) Get(index int) (interface{}, error) {
-	if index < 0 || index >= len(a.data) {
-		return nil, fmt.Errorf("index out of bounds") // Проверка на выход за границы массива
+	if index < 0 || index >= a.length { // Проверяем, допустим ли индекс
+		return nil, errors.New("недопустимый индекс")
 	}
-	return a.data[index], nil
+	return *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(index)*unsafe.Sizeof(interface{}(nil)))), nil // Возвращаем элемент по указанному индексу
 }
 
-// удаляет элемент из массива по указанному индексу
+// RemoveAtIndex удаляет элемент по указанному индексу
 func (a *Array) RemoveAtIndex(index int) error {
-	if index < 0 || index >= len(a.data) {
-		return fmt.Errorf("index out of bounds") // Проверка на выход за границы массива
+	if index < 0 || index >= a.length { // Проверяем, допустим ли индекс
+		return errors.New("недопустимый индекс")
 	}
-	a.data = append(a.data[:index], a.data[index+1:]...)
+	for i := index; i < a.length-1; i++ { // Сдвигаем элементы влево, начиная с указанного индекса
+		*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i)*unsafe.Sizeof(interface{}(nil)))) = *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i+1)*unsafe.Sizeof(interface{}(nil))))
+	}
+	a.length-- // Уменьшаем длину массива
 	return nil
 }
 
-// заменяет элемент массива по указанному индексу
-func (a *Array) ReplaceAtIndex(index int, value interface{}) error {
-	if index < 0 || index >= len(a.data) {
-		return fmt.Errorf("index out of bounds") // Проверка на выход за границы массива
+// ReplaceAtIndex заменяет элемент по указанному индексу
+func (a *Array) ReplaceAtIndex(index int, element interface{}) error {
+	if index < 0 || index >= a.length { // Проверяем, допустим ли индекс
+		return errors.New("недопустимый индекс")
 	}
-	a.data[index] = value
+	*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(index)*unsafe.Sizeof(interface{}(nil)))) = element // Заменяем элемент по указанному индексу
 	return nil
 }
 
-// возвращает длину массива
+// Length возвращает текущую длину массива
 func (a *Array) Length() int {
-	return len(a.data)
+	return a.length // Возвращаем текущую длину массива
 }
 
-// возвращает копию массива
+// Read возвращает все элементы массива в виде среза
 func (a *Array) Read() []interface{} {
-	return a.data
+	result := make([]interface{}, a.length) // Создаем срез для хранения элементов массива
+	for i := 0; i < a.length; i++ {         // Проходим по всем элементам массива
+		result[i] = *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i)*unsafe.Sizeof(interface{}(nil)))) // Копируем элемент в срез
+	}
+	return result // Возвращаем срез с элементами массива
 }

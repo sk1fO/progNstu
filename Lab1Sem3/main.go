@@ -39,6 +39,8 @@ func main() {
 	switch command {
 	case "APUSH":
 		handleArraySet(args) // Добавление элемента в массив
+	case "APUSHINDEX":
+		handleArraySetIndex(args)
 	case "AGET":
 		handleArrayGet(args) // Получение элемента из массива
 	case "ADEL":
@@ -109,6 +111,23 @@ func main() {
 }
 
 func handleArraySet(args []string) {
+	if len(args) < 2 {
+		log.Fatal("Usage: APUSH <array_name> <value>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+	value := args[1]
+
+	if arr, ok := arrays[name]; ok {
+		arr.AddToEnd(value) // Добавляем элемент в массив по индексу
+	} else {
+		arr := NewArray()
+		names[name] = "array"
+		arr.AddToEnd(value) // Создаем новый массив и добавляем элемент
+		arrays[name] = arr
+	}
+}
+
+func handleArraySetIndex(args []string) {
 	if len(args) < 3 {
 		log.Fatal("Usage: APUSH <array_name> <index> <value>") // Проверка на правильное количество аргументов
 	}
@@ -141,7 +160,10 @@ func handleArrayGet(args []string) {
 	}
 
 	if arr, ok := arrays[name]; ok {
-		value, _ := arr.Get(index) // Получаем элемент из массива
+		value, err := arr.Get(index) // Получаем элемент из массива
+		if err != nil {
+			log.Fatal(err) // Обработка ошибки
+		}
 		fmt.Println(value)
 	} else {
 		log.Fatalf("Array %s not found", name) // Обработка случая, когда массив не найден
@@ -159,7 +181,10 @@ func handleArrayRemove(args []string) {
 	}
 
 	if arr, ok := arrays[name]; ok {
-		arr.RemoveAtIndex(index) // Удаляем элемент из массива по индексу
+		err := arr.RemoveAtIndex(index) // Удаляем элемент из массива по индексу
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		log.Fatalf("Array %s not found", name) // Обработка случая, когда массив не найден
 	}
@@ -556,6 +581,8 @@ func handlePrint(args []string) {
 
 	if arr, ok := arrays[name]; ok {
 		fmt.Println(arr.Read()) // Выводим массив
+	} else if sl, ok := singlelists[name]; ok {
+		fmt.Println(sl.Read()) // выводим список
 	} else if lst, ok := lists[name]; ok {
 		fmt.Println(lst.Read()) // Выводим список
 	} else if q, ok := queues[name]; ok {
