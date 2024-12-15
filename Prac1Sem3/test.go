@@ -5,12 +5,17 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/antonmedv/expr/vm"
+
+	"github.com/antonmedv/expr"
 )
 
 // Определение структуры схемы
@@ -22,25 +27,25 @@ type Schema struct {
 
 // Определение структуры таблицы
 type Table struct {
-	Name         string      // Имя таблицы
-	Columns      []string    // Список столбцов
-	PrimaryKey   string      // Первичный ключ
-	SequenceFile string      // Файл последовательности для первичного ключа
-	LockFile     string      // Файл блокировки
-	Files        []string    // Список файлов CSV
-	Lock         *sync.Mutex // Мьютекс для блокировки таблицы
+	Name         string      `json:"name"`          // Имя таблицы
+	Columns      []string    `json:"columns"`       // Список столбцов
+	PrimaryKey   string      `json:"primary_key"`   // Первичный ключ
+	SequenceFile string      `json:"sequence_file"` // Файл последовательности для первичного ключа
+	LockFile     string      `json:"lock_file"`     // Файл блокировки
+	Files        []string    `json:"files"`         // Список файлов CSV
+	Lock         *sync.Mutex `json:"-"`             // Мьютекс для блокировки таблицы
 }
 
 // Определение структуры базы данных
 type Database struct {
-	Name       string            // Имя базы данных
-	TupleLimit int               // Лимит строк в файле
-	Tables     map[string]*Table // Список таблиц
+	Name       string            `json:"name"`         // Имя базы данных
+	TupleLimit int               `json:"tuples_limit"` // Лимит строк в файле
+	Tables     map[string]*Table `json:"tables"`       // Список таблиц
 }
 
 // Чтение конфигурации схемы
 func readSchema(filePath string) (*Schema, error) {
-	data, err := os.ReadFile(filePath)
+	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +131,7 @@ func selectData(db *Database, query string) ([][]string, error) {
 	fromTables := strings.Split(parts[3], ",")
 
 	var result [][]string
+	var headers []string
 
 	for _, table := range fromTables {
 		tbl, ok := db.Tables[table]
@@ -139,188 +145,77 @@ func selectData(db *Database, query string) ([][]string, error) {
 				return nil, err
 			}
 
+			if len(headers) == 0 {
+				headers = rows[0]
+				result = append(result, headers)
+			}
+
 			for _, row := range rows[1:] { // Пропускаем заголовок
-				var selectedRow []string
-				for _, col := range selectCols {
-					colParts := strings.Split(col, ".")
-					if colParts[0] == table {
-						idx := -1
-						for i, c := range tbl.Columns {
-							if c == colParts[1] {
-								idx = i
-								break
+				rowMap := make(map[string]string)
+				for i, col := range tbl.Columns {
+					rowMap[col] = row[i]
+				}
+
+				if len(parts) > 4 && parts[4] == "WHERE" {
+					condition := strings.Join(parts[5:], " ")
+					env := map[string]interface{}{}
+					for k, v := range rowMap {
+						env[k] = v
+					}
+
+					program, err := expr.Compile(condition, expr.Env(env))
+					if err != nil {
+						return nil, err
+					}
+
+					res, err := vm.Run(program, env)
+					if err != nil {
+						return nil, err
+					}
+
+					if res.(bool) {
+						var selectedRow []string
+						for _, col := range selectCols {
+							colParts := strings.Split(col, ".")
+							if colParts[0] == table {
+								idx := -1
+								for i, c := range tbl.Columns {
+									if c == colParts[1] {
+										idx = i
+										break
+									}
+								}
+								if idx != -1 {
+									selectedRow = append(selectedRow, row[idx])
+								}
 							}
 						}
-						if idx != -1 {
-							selectedRow = append(selectedRow, row[idx])
+						result = append(result, selectedRow)
+					}
+				} else {
+					var selectedRow []string
+					for _, col := range selectCols {
+						colParts := strings.Split(col, ".")
+						if colParts[0] == table {
+							idx := -1
+							for i, c := range tbl.Columns {
+								if c == colParts[1] {
+									idx = i
+									break
+								}
+							}
+							if idx != -1 {
+								selectedRow = append(selectedRow, row[idx])
+							}
 						}
 					}
+					result = append(result, selectedRow)
 				}
-				result = append(result, selectedRow)
 			}
 		}
 	}
 
 	return result, nil
-}
-
-// Реализация операции WHERE
-func whereClause(rows [][]string, conditions string) [][]string {
-	var header []string = rows[0]
-	var result [][]string
-	for _, row := range rows {
-		if evaluateCondition(header, row, conditions) {
-			result = append(result, row)
-		}
-	}
-	return result
-}
-
-// Оценка условия WHERE
-func evaluateCondition(header, row []string, conditions string) bool {
-	// Простая оценка равенства
-	parts := strings.Split(conditions, "=")
-	col := parts[0]
-	value := parts[1]
-
-	colParts := strings.Split(col, ".")
-	idx := -1
-	for i, c := range header { // из заголовка!!!
-		if c == colParts[1] {
-			idx = i
-			break
-		}
-	}
-
-	if idx != -1 {
-		return row[idx] == value
-	}
-
-	return false
-}
-
-// Реализация операции INSERT
-func insertData(db *Database, table string, values []string) error {
-	tbl, ok := db.Tables[table]
-	if !ok {
-		return fmt.Errorf("таблица %s не существует", table)
-	}
-
-	tbl.Lock.Lock()
-	defer tbl.Lock.Unlock()
-
-	// Получение следующего первичного ключа
-	seq, err := getNextSequence(tbl.SequenceFile)
-	if err != nil {
-		return err
-	}
-
-	// Добавление первичного ключа к значениям
-	values = append([]string{strconv.Itoa(seq)}, values...)
-
-	// Определение файла, в который нужно записать данные
-	lastFile := tbl.Files[len(tbl.Files)-1]
-	rows, err := readCSV(lastFile)
-	if err != nil {
-		return err
-	}
-
-	if len(rows) >= db.TupleLimit {
-		// Создание нового файла
-		newFile := filepath.Join(filepath.Dir(lastFile), fmt.Sprintf("%d.csv", len(tbl.Files)+1))
-		file, err := os.Create(newFile)
-		if err != nil {
-			return err
-		}
-		writer := csv.NewWriter(file)
-		writer.Write(tbl.Columns)
-		writer.Write(values)
-		writer.Flush()
-		file.Close()
-		tbl.Files = append(tbl.Files, newFile)
-	} else {
-		// Запись в последний файл
-		file, err := os.OpenFile(lastFile, os.O_APPEND|os.O_WRONLY, 0644)
-		if err != nil {
-			return err
-		}
-		writer := csv.NewWriter(file)
-		writer.Write(values)
-		writer.Flush()
-		file.Close()
-	}
-
-	return nil
-}
-
-// Получение следующего номера последовательности
-func getNextSequence(file string) (int, error) {
-	data, err := os.ReadFile(file)
-	if err != nil {
-		return 0, err
-	}
-	seq, err := strconv.Atoi(strings.TrimSpace(string(data)))
-	if err != nil {
-		return 0, err
-	}
-	seq++
-	if err := os.WriteFile(file, []byte(strconv.Itoa(seq)), 0644); err != nil {
-		return 0, err
-	}
-	return seq, nil
-}
-
-// Реализация операции DELETE
-func deleteData(db *Database, table string, conditions string) error {
-	tbl, ok := db.Tables[table]
-	if !ok {
-		return fmt.Errorf("таблица %s не существует", table)
-	}
-
-	tbl.Lock.Lock()
-	defer tbl.Lock.Unlock()
-
-	for i, file := range tbl.Files {
-		rows, err := readCSV(file)
-		if err != nil {
-			return err
-		}
-
-		header := rows[0]
-		newRows := [][]string{header} // Оставляем заголовок
-
-		for _, row := range rows[1:] {
-			if !evaluateCondition(header, row, conditions) {
-				newRows = append(newRows, row)
-			}
-		}
-
-		// Если файл становится пустым после удаления, удаляем его
-		if len(newRows) == 1 {
-			if err := os.Remove(file); err != nil {
-				return err
-			}
-			// Удаляем файл из списка
-			tbl.Files = append(tbl.Files[:i], tbl.Files[i+1:]...)
-		} else {
-			// Запись новых строк обратно в файл
-			file, err := os.Create(file)
-			if err != nil {
-				return err
-			}
-			writer := csv.NewWriter(file)
-			for _, row := range newRows {
-				if err := writer.Write(row); err != nil {
-					file.Close()
-					return err
-				}
-			}
-			writer.Flush()
-			file.Close()
-		}
-	}
-
-	return nil
 }
 
 // Чтение CSV файла
@@ -416,4 +311,160 @@ func main() {
 			fmt.Println("Неизвестная команда. Поддерживаемые команды: INSERT, SELECT, DELETE, exit")
 		}
 	}
+}
+
+// Реализация операции INSERT
+func insertData(db *Database, table string, values []string) error {
+	tbl, ok := db.Tables[table]
+	if !ok {
+		return fmt.Errorf("таблица %s не существует", table)
+	}
+
+	tbl.Lock.Lock()
+	defer tbl.Lock.Unlock()
+
+	// Получение следующего первичного ключа
+	seq, err := getNextSequence(tbl.SequenceFile)
+	if err != nil {
+		return err
+	}
+
+	// Добавление первичного ключа к значениям
+	values = append([]string{strconv.Itoa(seq)}, values...)
+
+	// Определение файла, в который нужно записать данные
+	lastFile := tbl.Files[len(tbl.Files)-1]
+	rows, err := readCSV(lastFile)
+	if err != nil {
+		return err
+	}
+
+	if len(rows) >= db.TupleLimit {
+		// Создание нового файла
+		newFile := filepath.Join(filepath.Dir(lastFile), fmt.Sprintf("%d.csv", len(tbl.Files)+1))
+		file, err := os.Create(newFile)
+		if err != nil {
+			return err
+		}
+		writer := csv.NewWriter(file)
+		writer.Write(tbl.Columns)
+		writer.Write(values)
+		writer.Flush()
+		file.Close()
+		tbl.Files = append(tbl.Files, newFile)
+	} else {
+		// Запись в последний файл
+		file, err := os.OpenFile(lastFile, os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		writer := csv.NewWriter(file)
+		writer.Write(values)
+		writer.Flush()
+		file.Close()
+	}
+
+	return nil
+}
+
+// Получение следующего номера последовательности
+func getNextSequence(file string) (int, error) {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return 0, err
+	}
+	seq, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return 0, err
+	}
+	seq++
+	if err := ioutil.WriteFile(file, []byte(strconv.Itoa(seq)), 0644); err != nil {
+		return 0, err
+	}
+	return seq, nil
+}
+
+// Реализация операции DELETE
+func deleteData(db *Database, table string, conditions string) error {
+	tbl, ok := db.Tables[table]
+	if !ok {
+		return fmt.Errorf("таблица %s не существует", table)
+	}
+
+	tbl.Lock.Lock()
+	defer tbl.Lock.Unlock()
+
+	if conditions == "" {
+		// Если нет условий, удаляем все записи
+		for i, file := range tbl.Files {
+			if err := os.Remove(file); err != nil {
+				return err
+			}
+			// Удаляем файл из списка
+			tbl.Files = append(tbl.Files[:i], tbl.Files[i+1:]...)
+		}
+		return nil
+	}
+
+	for i, file := range tbl.Files {
+		rows, err := readCSV(file)
+		if err != nil {
+			return err
+		}
+
+		header := rows[0]
+		newRows := [][]string{header} // Оставляем заголовок
+
+		for _, row := range rows[1:] {
+			rowMap := make(map[string]string)
+			for i, col := range tbl.Columns {
+				rowMap[col] = row[i]
+			}
+
+			env := map[string]interface{}{}
+			for k, v := range rowMap {
+				env[k] = v
+			}
+
+			program, err := expr.Compile(conditions, expr.Env(env))
+			if err != nil {
+				return err
+			}
+
+			res, err := vm.Run(program, env)
+			if err != nil {
+				return err
+			}
+
+			if !res.(bool) {
+				newRows = append(newRows, row)
+			}
+		}
+
+		// Если файл становится пустым после удаления, удаляем его
+		if len(newRows) == 1 {
+			if err := os.Remove(file); err != nil {
+				return err
+			}
+			// Удаляем файл из списка
+			tbl.Files = append(tbl.Files[:i], tbl.Files[i+1:]...)
+		} else {
+			// Запись новых строк обратно в файл
+			file, err := os.Create(file)
+			if err != nil {
+				return err
+			}
+			writer := csv.NewWriter(file)
+			for _, row := range newRows {
+				if err := writer.Write(row); err != nil {
+					file.Close()
+					return err
+				}
+			}
+			writer.Flush()
+			file.Close()
+		}
+	}
+
+	return nil
 }

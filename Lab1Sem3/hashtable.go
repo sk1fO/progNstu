@@ -151,13 +151,13 @@ func (h *HashTable) Delete(key string) {
 }
 
 // Возвращает копию всех элементов хеш-таблицы в виде среза строк
-func (h *HashTable) Read() []interface{} {
-	var result []interface{} // Инициализируем срез для хранения результатов
+func (h *HashTable) Read() map[string]interface{} {
+	result := make(map[string]interface{}) // Инициализируем срез для хранения результатов
 	for _, list := range h.buckets {
 		if list != nil {
 			current := list.head
 			for current != nil {
-				result = append(result, current.key+":"+current.value.(string)) // Формируем строку "ключ:значение" и добавляем в срез
+				result[current.key] = current.value // Формируем строку "ключ:значение" и добавляем в срез
 				current = current.next
 			}
 		}

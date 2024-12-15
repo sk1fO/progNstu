@@ -116,3 +116,113 @@ func (l *List) Read() []interface{} {
 	}
 	return result // Возвращаем срез со всеми значениями
 }
+
+type SingleLinkedList struct {
+	value interface{}
+	head  *Node
+}
+
+func NewSingleList() *SingleLinkedList {
+	return &SingleLinkedList{head: nil}
+}
+
+func (l *SingleLinkedList) AddToHead(value interface{}) {
+	newNode := &Node{value: value, next: nil}
+
+	if l.head == nil {
+		l.head = newNode
+	} else {
+		newNode.next = l.head
+		l.head = newNode
+	}
+}
+
+func (l *SingleLinkedList) AddToTail(value interface{}) {
+	newNode := &Node{value: value, next: nil}
+
+	if l.head == nil {
+		l.head = newNode
+	} else {
+		current := l.head
+		for current.next != nil {
+			current = current.next
+		}
+
+		current.next = newNode
+	}
+}
+
+func (l *SingleLinkedList) RemoveFromHead() (interface{}, error) {
+	if l.head == nil {
+		return nil, fmt.Errorf("list is empty") // Проверка на пустой список
+	}
+
+	value := l.head.value
+	l.head = l.head.next
+	return value, nil
+}
+
+func (l *SingleLinkedList) RemoveFromTail() (interface{}, error) {
+	if l.head == nil {
+		return nil, fmt.Errorf("list is empty") // Проверка на пустой список
+	}
+
+	if l.head.next == nil {
+		value := l.head.value
+		l.head = nil
+		return value, nil
+	}
+
+	current := l.head
+	for current.next.next != nil {
+		current = current.next
+	}
+
+	value := current.next.value
+	current.next = nil
+	return value, nil
+}
+
+func (l *SingleLinkedList) RemoveByValue(value interface{}) error {
+	if l.head.value == value {
+		l.RemoveFromHead()
+		return nil
+	}
+
+	previous := l.head
+	current := l.head.next
+
+	for current != nil {
+		if current.value == value {
+			previous.next = current.next
+			return nil
+		}
+		previous = current
+		current = current.next
+	}
+
+	return fmt.Errorf("value not found") // Если значение не найдено, возвращаем ошибку
+}
+
+// проверка, содержит ли список значение
+func (l *SingleLinkedList) FindByValue(value interface{}) bool {
+	node := l.head // Начинаем с первого узла
+	for node != nil {
+		if node.value == value {
+			return true // Если значение найдено, возвращаем true
+		}
+		node = node.next // Переходим к следующему узлу
+	}
+	return false // Если значение не найдено, возвращаем false
+}
+
+// возвращает копию всех значений списка
+func (l *SingleLinkedList) Read() []interface{} {
+	var result []interface{} // Инициализируем срез для хранения значений
+	node := l.head           // Начинаем с первого узла
+	for node != nil {
+		result = append(result, node.value) // Добавляем значение узла в срез
+		node = node.next                    // Переходим к следующему узлу
+	}
+	return result // Возвращаем срез со всеми значениями
+}

@@ -1,47 +1,113 @@
 package main
 
+// структура узла дерева
+type TreeNode struct {
+	Value interface{}
+	Left  *TreeNode
+	Right *TreeNode
+}
+
 // структура данных полного бинарного дерева
 type CBTree struct {
-	data []interface{} // срез для хранения элементов дерева
+	root *TreeNode // корень дерева
+	size int       // размер дерева
 }
 
 // создает и возвращает указатель на новое пустое полное бинарное дерево
 func NewCBTree() *CBTree {
-	return &CBTree{data: make([]interface{}, 0)} // Инициализируем пустой массив для хранения элементов
+	return &CBTree{root: nil, size: 0}
 }
 
 // добавляет элемент в полное бинарное дерево
 func (t *CBTree) Add(value interface{}) {
-	t.data = append(t.data, value) // добавляем элемент в конец массива
+	t.size++
+	if t.root == nil {
+		t.root = &TreeNode{Value: value}
+		return
+	}
+	queue := []*TreeNode{t.root}
+	for {
+		node := queue[0]
+		queue = queue[1:]
+		if node.Left == nil {
+			node.Left = &TreeNode{Value: value}
+			return
+		}
+		if node.Right == nil {
+			node.Right = &TreeNode{Value: value}
+			return
+		}
+		queue = append(queue, node.Left, node.Right)
+	}
 }
 
 // проверяет, содержит ли дерево заданное значение.
 func (t *CBTree) Find(value interface{}) bool {
-	for _, v := range t.data { // Проходим по всем элементам массива
-		if v == value {
-			return true // Возвращаем true, если значение найдено
+	queue := []*TreeNode{t.root}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if node.Value == value {
+			return true
+		}
+		if node.Left != nil {
+			queue = append(queue, node.Left)
+		}
+		if node.Right != nil {
+			queue = append(queue, node.Right)
 		}
 	}
-	return false // Возвращаем false, если значение не найдено
+	return false
 }
 
 // проверяет, является ли дерево полным бинарным деревом.
 func (t *CBTree) IsComplete() bool {
-	n := len(t.data)         // Получаем количество элементов в массиве
-	for i := 0; i < n; i++ { // Проходим по всем элементам массива
-		left := 2*i + 1                      // Индекс левого потомка
-		right := 2*i + 2                     // Индекс правого потомка
-		if left < n && t.data[left] == nil { // Проверяем, существует ли левый потомок
-			return false // Если левый потомок отсутствует, дерево не является полным
+	if t.root == nil {
+		return true
+	}
+	queue := []*TreeNode{t.root}
+	isLeafExpected := false
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+
+		if isLeafExpected && (node.Left != nil || node.Right != nil) {
+			return false
 		}
-		if right < n && t.data[right] == nil { // Проверяем, существует ли правый потомок
-			return false // Если правый потомок отсутствует, дерево не является полным
+
+		if node.Left == nil && node.Right != nil {
+			return false
+		}
+
+		if node.Left != nil {
+			queue = append(queue, node.Left)
+		}
+		if node.Right != nil {
+			queue = append(queue, node.Right)
+		} else {
+			isLeafExpected = true
 		}
 	}
-	return true // Если все проверки пройдены, дерево является полным
+	return true
 }
 
 // возвращает копию всех элементов дерева.
 func (t *CBTree) Read() []interface{} {
-	return t.data // Возвращаем массив с элементами дерева
+	if t.root == nil {
+		return []interface{}{}
+	}
+	result := make([]interface{}, 0, t.size)
+	queue := []*TreeNode{t.root}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		result = append(result, node.Value)
+		if node.Left != nil {
+			queue = append(queue, node.Left)
+		}
+		if node.Right != nil {
+			queue = append(queue, node.Right)
+		}
+	}
+	return result
 }

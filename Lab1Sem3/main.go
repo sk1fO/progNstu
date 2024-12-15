@@ -11,12 +11,14 @@ import (
 )
 
 var ( // map для записи в json
-	arrays     = make(map[string]*Array) // объявляем все атд
-	lists      = make(map[string]*List)
-	queues     = make(map[string]*Queue)
-	stacks     = make(map[string]*Stack)
-	hashtables = make(map[string]*HashTable)
-	cbtrees    = make(map[string]*CBTree)
+	arrays      = make(map[string]*Array) // объявляем все атд
+	lists       = make(map[string]*List)
+	singlelists = make(map[string]*SingleLinkedList)
+	queues      = make(map[string]*Queue)
+	stacks      = make(map[string]*Stack)
+	hashtables  = make(map[string]*HashTable)
+	cbtrees     = make(map[string]*CBTree)
+	names       = make(map[string]interface{}) // Храним все имена с типом, которому всё присвоено
 )
 
 func main() {
@@ -58,6 +60,19 @@ func main() {
 		handleListRemoveValue(args) // Удаление элемента по значению
 	case "LFINDVALUE":
 		handleListFindValue(args) // Наличие элемента по значению
+
+	case "SLPUSHHEAD":
+		handleSListAddHead(args) // Добавление элемента в голову списка
+	case "SLPUSHTAIL":
+		handleSListAddTail(args) // Добавление элемента в хвост списка
+	case "SLDELHEAD":
+		handleSListRemoveHead(args) // Удаление элемента из головы списка
+	case "SLDELTAIL":
+		handleSListRemoveTail(args) // Удаление элемента из хвоста списка
+	case "SLDELVALUE":
+		handleSListRemoveValue(args) // Удаление элемента по значению
+	case "SLFINDVALUE":
+		handleSListFindValue(args) // Наличие элемента по значению
 
 	case "QPUSH":
 		handleQueuePush(args) // Добавление элемента в очередь
@@ -109,6 +124,7 @@ func handleArraySet(args []string) {
 		arr.AddAtIndex(index, value) // Добавляем элемент в массив по индексу
 	} else {
 		arr := NewArray()
+		names[name] = "array"
 		arr.AddAtIndex(index, value) // Создаем новый массив и добавляем элемент
 		arrays[name] = arr
 	}
@@ -181,6 +197,107 @@ func handleArrayLength(args []string) {
 	}
 }
 
+func handleSListAddHead(args []string) {
+	if len(args) < 2 {
+		log.Fatal("Usage: SLPUSHHEAD <list_name> <value>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+	value := args[1]
+
+	if lst, ok := singlelists[name]; ok {
+
+		lst.AddToHead(value) // Добавляем элемент в голову списка
+	} else {
+		lst := NewSingleList()
+		names[name] = "sl"
+		lst.AddToHead(value) // Создаем новый список и добавляем элемент
+		singlelists[name] = lst
+	}
+}
+
+func handleSListAddTail(args []string) {
+	if len(args) < 2 {
+		log.Fatal("Usage: SLPUSHTAIL <list_name> <value>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+	value := args[1]
+
+	if lst, ok := singlelists[name]; ok {
+		lst.AddToTail(value) // Добавляем элемент в хвост списка
+	} else {
+		lst := NewSingleList()
+		names[name] = "sl"
+		lst.AddToTail(value) // Создаем новый список и добавляем элемент
+		singlelists[name] = lst
+	}
+}
+
+func handleSListRemoveHead(args []string) {
+	if len(args) < 1 {
+		log.Fatal("Usage: SLDELHEAD <list_name>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+
+	if lst, ok := singlelists[name]; ok {
+		value, err := lst.RemoveFromHead() // Удаляем элемент из головы списка
+		if err != nil {                    // обработка ошибки
+			log.Fatalln(err)
+		}
+		fmt.Println(value)
+	} else {
+		log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+	}
+}
+
+func handleSListRemoveTail(args []string) {
+	if len(args) < 1 {
+		log.Fatal("Usage: SLDELTAIL <list_name>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+
+	if lst, ok := singlelists[name]; ok {
+		value, err := lst.RemoveFromTail() // Удаляем элемент из хвоста списка
+		if err != nil {
+			log.Fatalln(err)
+		}
+		fmt.Println(value)
+	} else {
+		log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+	}
+}
+
+func handleSListRemoveValue(args []string) {
+	if len(args) < 2 {
+		log.Fatal("Usage: SLDELVALUE <list_name> <value>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+	value := args[1]
+
+	if lst, ok := singlelists[name]; ok {
+		err := lst.RemoveByValue(value) // Удаляем элемент по значению
+		if err != nil {
+			log.Fatalln(err)
+		}
+	} else {
+		log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+	}
+}
+
+func handleSListFindValue(args []string) {
+	if len(args) < 2 {
+		log.Fatal("Usage: SLFINDVALUE <list_name> <value>") // Проверка на правильное количество аргументов
+	}
+	name := args[0]
+	value := args[1]
+
+	if lst, ok := singlelists[name]; ok {
+		found := lst.FindByValue(value) // Ищем элемент по значению
+		fmt.Println(found)
+	} else {
+		log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+	}
+}
+
 func handleListAddHead(args []string) {
 	if len(args) < 2 {
 		log.Fatal("Usage: LPUSHHEAD <list_name> <value>") // Проверка на правильное количество аргументов
@@ -192,6 +309,7 @@ func handleListAddHead(args []string) {
 		lst.AddToHead(value) // Добавляем элемент в голову списка
 	} else {
 		lst := NewList()
+		names[name] = "list"
 		lst.AddToHead(value) // Создаем новый список и добавляем элемент
 		lists[name] = lst
 	}
@@ -208,6 +326,7 @@ func handleListAddTail(args []string) {
 		lst.AddToTail(value) // Добавляем элемент в хвост списка
 	} else {
 		lst := NewList()
+		names[name] = "list"
 		lst.AddToTail(value) // Создаем новый список и добавляем элемент
 		lists[name] = lst
 	}
@@ -281,6 +400,7 @@ func handleQueuePush(args []string) {
 		q.Push(value) // Добавляем элемент в очередь
 	} else {
 		q := NewQueue()
+		names[name] = "queue"
 		q.Push(value) // Создаем новую очередь и добавляем элемент
 		queues[name] = q
 	}
@@ -311,6 +431,7 @@ func handleStackPush(args []string) {
 		s.Push(value) // Добавляем элемент в стек
 	} else {
 		s := NewStack()
+		names[name] = "stack"
 		s.Push(value) // Создаем новый стек и добавляем элемент
 		stacks[name] = s
 	}
@@ -342,6 +463,7 @@ func handleHashSet(args []string) {
 		h.Set(key, value) // Добавляем элемент в хеш-таблицу
 	} else {
 		h := NewHashTable()
+		names[name] = "ht"
 		h.Set(key, value) // Создаем новую хеш-таблицу и добавляем элемент
 		hashtables[name] = h
 	}
@@ -391,6 +513,7 @@ func handleCBTAdd(args []string) {
 		t.Add(value) // Добавляем элемент в полное бинарное дерево
 	} else {
 		t := NewCBTree()
+		names[name] = "cbt"
 		t.Add(value) // Создаем новое полное бинарное дерево и добавляем элемент
 		cbtrees[name] = t
 	}
@@ -461,24 +584,58 @@ func loadFromFile(file string) {
 		return
 	}
 
+	names, _ = savedData["names"].(map[string]interface{})
+	delete(savedData, "names")
+
 	for k, v := range savedData {
-		switch v.(type) {
-		case []interface{}:
+
+		name := names[k].(string)
+		switch name {
+		case "array":
 			arr := NewArray()
 			for _, item := range v.([]interface{}) {
 				arr.AddToEnd(item) // Добавляем элементы в массив
 			}
 			arrays[k] = arr
-		case []map[string]interface{}:
+
+		case "list":
 			lst := NewList()
-			for _, item := range v.([]map[string]interface{}) {
-				lst.AddToTail(item["value"]) // Добавляем элементы в список
+			for _, item := range v.([]interface{}) {
+				lst.AddToTail(item) // Добавляем элементы в список
 			}
 			lists[k] = lst
-		case map[string]interface{}:
+
+		case "sl":
+			lst := NewSingleList()
+			for _, item := range v.([]interface{}) {
+				lst.AddToTail(item)
+			}
+			singlelists[k] = lst
+
+		case "cbt":
+			cbt := NewCBTree()
+			for _, item := range v.([]interface{}) {
+				cbt.Add(item)
+			}
+			cbtrees[k] = cbt
+
+		case "stack":
+			s := NewStack()
+			for _, item := range v.([]interface{}) {
+				s.Push(item)
+			}
+			stacks[k] = s
+
+		case "queue":
+			q := NewQueue()
+			for _, item := range v.([]interface{}) {
+				q.Push(item)
+			}
+			queues[k] = q
+		case "ht":
 			h := NewHashTable()
-			for k, v := range v.(map[string]interface{}) {
-				h.Set(k, v) // Добавляем элементы в хеш-таблицу
+			for k1, v1 := range v.(map[string]interface{}) {
+				h.Set(k1, v1) // Добавляем элементы в хеш-таблицу
 			}
 			hashtables[k] = h
 		}
@@ -488,6 +645,8 @@ func loadFromFile(file string) {
 func saveToFile(file string) {
 	data := make(map[string]interface{})
 
+	data["names"] = names
+
 	for k, v := range arrays {
 		data[k] = v.Read() // Сохраняем массивы
 	}
@@ -496,12 +655,24 @@ func saveToFile(file string) {
 		data[k] = v.Read() // Сохраняем списки
 	}
 
+	for k, v := range singlelists {
+		data[k] = v.Read()
+	}
+
 	for k, v := range hashtables {
 		data[k] = v.Read() // Сохраняем хеш-таблицы
 	}
 
 	for k, v := range cbtrees {
 		data[k] = v.Read() // Сохраняем полные бинарные деревья
+	}
+
+	for k, v := range queues {
+		data[k] = v.Read()
+	}
+
+	for k, v := range stacks {
+		data[k] = v.Read()
 	}
 
 	jsonData, err := json.Marshal(data)
