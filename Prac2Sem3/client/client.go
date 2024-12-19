@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// Подключение к серверу
-	conn, err := net.Dial("tcp", "localhost:7432")
+	conn, err := net.Dial("tcp", "147.45.161.16:7432")
 	if err != nil {
 		log.Fatalf("Не удалось подключиться к серверу: %v", err)
 	}
