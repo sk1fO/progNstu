@@ -25,7 +25,7 @@ func NewArray() *Array {
 // AddToEnd добавляет элемент в конец массива
 func (a *Array) AddToEnd(element interface{}) error {
 	if a.length >= maxSize { // Проверяем, не переполнен ли массив
-		return errors.New("массив переполнен")
+		return errors.New("array overflow")
 	}
 	*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(a.length)*unsafe.Sizeof(interface{}(nil)))) = element // Добавляем элемент в конец массива
 	a.length++                                                                                                     // Увеличиваем длину массива
@@ -35,10 +35,10 @@ func (a *Array) AddToEnd(element interface{}) error {
 // AddAtIndex добавляет элемент по указанному индексу
 func (a *Array) AddAtIndex(index int, element interface{}) error {
 	if index < 0 || index > a.length { // Проверяем, допустим ли индекс
-		return errors.New("недопустимый индекс")
+		return errors.New("bad index error")
 	}
 	if a.length >= maxSize { // Проверяем, не переполнен ли массив
-		return errors.New("массив переполнен")
+		return errors.New("array overflow")
 	}
 	for i := a.length; i > index; i-- { // Сдвигаем элементы вправо, начиная с конца
 		*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i)*unsafe.Sizeof(interface{}(nil)))) = *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i-1)*unsafe.Sizeof(interface{}(nil))))
@@ -51,7 +51,7 @@ func (a *Array) AddAtIndex(index int, element interface{}) error {
 // Get получает элемент по указанному индексу
 func (a *Array) Get(index int) (interface{}, error) {
 	if index < 0 || index >= a.length { // Проверяем, допустим ли индекс
-		return nil, errors.New("недопустимый индекс")
+		return nil, errors.New("bad index error")
 	}
 	return *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(index)*unsafe.Sizeof(interface{}(nil)))), nil // Возвращаем элемент по указанному индексу
 }
@@ -59,7 +59,7 @@ func (a *Array) Get(index int) (interface{}, error) {
 // RemoveAtIndex удаляет элемент по указанному индексу
 func (a *Array) RemoveAtIndex(index int) error {
 	if index < 0 || index >= a.length { // Проверяем, допустим ли индекс
-		return errors.New("недопустимый индекс")
+		return errors.New("bad index error")
 	}
 	for i := index; i < a.length-1; i++ { // Сдвигаем элементы влево, начиная с указанного индекса
 		*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i)*unsafe.Sizeof(interface{}(nil)))) = *(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(i+1)*unsafe.Sizeof(interface{}(nil))))
@@ -71,7 +71,7 @@ func (a *Array) RemoveAtIndex(index int) error {
 // ReplaceAtIndex заменяет элемент по указанному индексу
 func (a *Array) ReplaceAtIndex(index int, element interface{}) error {
 	if index < 0 || index >= a.length { // Проверяем, допустим ли индекс
-		return errors.New("недопустимый индекс")
+		return errors.New("bad index error")
 	}
 	*(*interface{})(unsafe.Pointer(uintptr(a.data) + uintptr(index)*unsafe.Sizeof(interface{}(nil)))) = element // Заменяем элемент по указанному индексу
 	return nil
