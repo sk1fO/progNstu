@@ -6,11 +6,17 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 )
 
 func main() {
+	fmt.Print("Введите ip: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	ip := scanner.Text()
+
 	// Подключение к серверу
-	conn, err := net.Dial("tcp", "147.45.161.16:7432")
+	conn, err := net.Dial("tcp", ip+":7432")
 	if err != nil {
 		log.Fatalf("Не удалось подключиться к серверу: %v", err)
 	}
@@ -47,7 +53,17 @@ func main() {
 
 		// Вывод ответа
 		fmt.Println("Результат:")
-		fmt.Println(response)
+
+		results := strings.Split(response, "]")
+		for _, result := range results {
+			if result == "" {
+				break
+			}
+
+			result = strings.ReplaceAll(result, ",", " ")
+			result = strings.ReplaceAll(result, `"`, "")
+			fmt.Println(strings.ReplaceAll(result, "[", ""))
+		}
 
 		// Выход, если пользователь ввел "exit"
 		if query == "exit" {
