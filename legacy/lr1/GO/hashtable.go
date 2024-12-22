@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const TABLE_SIZE = 100
+const TABLE_SIZE = 1000
 
 type Element struct {
 	key   string
