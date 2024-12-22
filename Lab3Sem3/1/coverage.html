@@ -1,0 +1,822 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>1: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">/home/sk1fo/vsCode/progNstu/Lab3Sem3/1/main.go (56.7%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "1/Array"
+        "1/CBTree"
+        "1/HashTable"
+        "1/Lists"
+        "1/Queue"
+        "1/Stack"
+        "encoding/json"
+        "flag"
+        "fmt"
+        "log"
+        "os"
+        "strconv"
+        "strings"
+)
+
+var ( // map для записи в json
+        arrays      = make(map[string]*Array.Array) // объявляем все атд
+        lists       = make(map[string]*Lists.List)
+        singlelists = make(map[string]*Lists.SingleLinkedList)
+        queues      = make(map[string]*Queue.Queue)
+        stacks      = make(map[string]*Stack.Stack)
+        hashtables  = make(map[string]*HashTable.HashTable)
+        cbtrees     = make(map[string]*CBTree.CBTree)
+        names       = make(map[string]interface{}) // Храним все имена с типом, которому всё присвоено
+)
+
+func main() <span class="cov8" title="1">{
+        filePtr := flag.String("file", "", "file to read and write data") // Указатель на файл для чтения и записи данных
+        queryPtr := flag.String("query", "", "query to execute")          // Указатель на команду для выполнения
+        flag.Parse()                                                      // Парсим аргументы командной строки
+
+        if *filePtr == "" || *queryPtr == "" </span><span class="cov0" title="0">{
+                log.Fatal("Both --file and --query must be specified") // Проверяем, что указаны оба параметра
+        }</span>
+
+        <span class="cov8" title="1">loadFromFile(*filePtr) // Загружаем данные из файла
+
+        parts := strings.Split(*queryPtr, " ") // Разделяем команду на части
+        command := parts[0]                    // Команда
+        args := parts[1:]                      // Аргументы команды
+
+        switch command </span>{
+        case "APUSH":<span class="cov8" title="1">
+                handleArraySet(args)</span> // Добавление элемента в массив
+        case "APUSHINDEX":<span class="cov0" title="0">
+                handleArraySetIndex(args)</span>
+        case "AGET":<span class="cov8" title="1">
+                handleArrayGet(args)</span> // Получение элемента из массива
+        case "ADEL":<span class="cov8" title="1">
+                handleArrayRemove(args)</span> // Удаление элемента из массива
+        case "AREPLACE":<span class="cov0" title="0">
+                handleArrayReplace(args)</span> // Замена элемента в массиве
+        case "ALEN":<span class="cov8" title="1">
+                handleArrayLength(args)</span> // Получение длины массива
+
+        case "LPUSHHEAD":<span class="cov8" title="1">
+                handleListAddHead(args)</span> // Добавление элемента в голову списка
+        case "LPUSHTAIL":<span class="cov8" title="1">
+                handleListAddTail(args)</span> // Добавление элемента в хвост списка
+        case "LDELHEAD":<span class="cov8" title="1">
+                handleListRemoveHead(args)</span> // Удаление элемента из головы списка
+        case "LDELTAIL":<span class="cov0" title="0">
+                handleListRemoveTail(args)</span> // Удаление элемента из хвоста списка
+        case "LDELVALUE":<span class="cov0" title="0">
+                handleListRemoveValue(args)</span> // Удаление элемента по значению
+        case "LFINDVALUE":<span class="cov0" title="0">
+                handleListFindValue(args)</span> // Наличие элемента по значению
+
+        case "SLPUSHHEAD":<span class="cov0" title="0">
+                handleSListAddHead(args)</span> // Добавление элемента в голову списка
+        case "SLPUSHTAIL":<span class="cov0" title="0">
+                handleSListAddTail(args)</span> // Добавление элемента в хвост списка
+        case "SLDELHEAD":<span class="cov0" title="0">
+                handleSListRemoveHead(args)</span> // Удаление элемента из головы списка
+        case "SLDELTAIL":<span class="cov0" title="0">
+                handleSListRemoveTail(args)</span> // Удаление элемента из хвоста списка
+        case "SLDELVALUE":<span class="cov0" title="0">
+                handleSListRemoveValue(args)</span> // Удаление элемента по значению
+        case "SLFINDVALUE":<span class="cov0" title="0">
+                handleSListFindValue(args)</span> // Наличие элемента по значению
+
+        case "QPUSH":<span class="cov8" title="1">
+                handleQueuePush(args)</span> // Добавление элемента в очередь
+        case "QPOP":<span class="cov8" title="1">
+                handleQueuePop(args)</span> // Удаление элемента из очереди
+
+        case "SPUSH":<span class="cov8" title="1">
+                handleStackPush(args)</span> // Добавление элемента в стек
+        case "SPOP":<span class="cov8" title="1">
+                handleStackPop(args)</span> // Удаление элемента из стека
+
+        case "HSET":<span class="cov8" title="1">
+                handleHashSet(args)</span> // Добавление элемента в хеш-таблицу
+        case "HGET":<span class="cov8" title="1">
+                handleHashGet(args)</span> // Получение элемента из хеш-таблицы
+        case "HDEL":<span class="cov8" title="1">
+                handleHashDelete(args)</span> // Удаление элемента из хеш-таблицы
+
+        case "TINSERT":<span class="cov8" title="1">
+                handleCBTAdd(args)</span> // Добавление элемента в полное бинарное дерево
+        case "TFIND":<span class="cov8" title="1">
+                handleCBTFind(args)</span> // Поиск элемента в полном бинарном дереве
+        case "TISCOMPLETE":<span class="cov8" title="1">
+                handleCBTIsComplete(args)</span> // Проверка, является ли дерево полным
+
+        case "PRINT":<span class="cov8" title="1">
+                handlePrint(args)</span> // Вывод структуры данных на экран
+
+        default:<span class="cov0" title="0">
+                log.Fatalf("Unknown command: %s", command)</span> // Обработка неизвестной команды
+        }
+
+        <span class="cov8" title="1">saveToFile(*filePtr)</span> // Сохраняем данные в файл
+}
+
+func handleArraySet(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: APUSH &lt;array_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if arr, ok := arrays[name]; ok </span><span class="cov8" title="1">{
+                arr.AddToEnd(value) // Добавляем элемент в массив по индексу
+        }</span> else<span class="cov8" title="1"> {
+                arr := Array.NewArray()
+                names[name] = "array"
+                arr.AddToEnd(value) // Создаем новый массив и добавляем элемент
+                arrays[name] = arr
+        }</span>
+}
+
+func handleArraySetIndex(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 3 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: APUSH &lt;array_name&gt; &lt;index&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        index, err := strconv.Atoi(args[1])
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Usage: APUSH &lt;array_name&gt; &lt;index&gt; &lt;value&gt;\nIndex invalid: ", args[1]) // Проверка на корректность индекса
+        }</span>
+
+        <span class="cov0" title="0">value := args[2]
+
+        if arr, ok := arrays[name]; ok </span><span class="cov0" title="0">{
+                arr.AddAtIndex(index, value) // Добавляем элемент в массив по индексу
+        }</span> else<span class="cov0" title="0"> {
+                arr := Array.NewArray()
+                names[name] = "array"
+                arr.AddAtIndex(index, value) // Создаем новый массив и добавляем элемент
+                arrays[name] = arr
+        }</span>
+}
+
+func handleArrayGet(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: AGET &lt;array_name&gt; &lt;index&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        index, err := strconv.Atoi(args[1])
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Usage: AGET &lt;array_name&gt; &lt;index&gt;\nInvalid index: ", args[1]) // Проверка на корректность индекса
+        }</span>
+
+        <span class="cov8" title="1">if arr, ok := arrays[name]; ok </span><span class="cov8" title="1">{
+                value, err := arr.Get(index) // Получаем элемент из массива
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatal(err) // Обработка ошибки
+                }</span>
+                <span class="cov8" title="1">fmt.Println(value)</span>
+        } else<span class="cov0" title="0"> {
+                log.Fatalf("Array %s not found", name) // Обработка случая, когда массив не найден
+        }</span>
+}
+
+func handleArrayRemove(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: ADEL &lt;array_name&gt; &lt;index&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        index, err := strconv.Atoi(args[1])
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Usage: ADEL &lt;array_name&gt; &lt;index&gt;\nInvalid index: ", args[1]) // Проверка на корректность индекса
+        }</span>
+
+        <span class="cov8" title="1">if arr, ok := arrays[name]; ok </span><span class="cov8" title="1">{
+                err := arr.RemoveAtIndex(index) // Удаляем элемент из массива по индексу
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatal(err)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                log.Fatalf("Array %s not found", name) // Обработка случая, когда массив не найден
+        }</span>
+}
+
+func handleArrayReplace(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 3 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: AREPLACE &lt;array_name&gt; &lt;index&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        index, err := strconv.Atoi(args[1])
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Usage: AREPLACE &lt;array_name&gt; &lt;index&gt; &lt;value&gt;\nInvalid index: ", args[1]) // Проверка на корректность индекса
+        }</span>
+
+        <span class="cov0" title="0">value := args[2]
+
+        if arr, ok := arrays[name]; ok </span><span class="cov0" title="0">{
+                arr.ReplaceAtIndex(index, value) // Заменяем элемент в массиве по индексу
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("Array %s not found", name) // Обработка случая, когда массив не найден
+        }</span>
+}
+
+func handleArrayLength(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: ALEN &lt;array_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+
+        if arr, ok := arrays[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(arr.Length()) // Выводим длину массива
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("Array %s not found", name) // Обработка случая, когда массив не найден
+        }</span>
+}
+
+func handleSListAddHead(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SLPUSHHEAD &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        value := args[1]
+
+        if lst, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+
+                lst.AddToHead(value) // Добавляем элемент в голову списка
+        }</span> else<span class="cov0" title="0"> {
+                lst := Lists.NewSingleList()
+                names[name] = "sl"
+                lst.AddToHead(value) // Создаем новый список и добавляем элемент
+                singlelists[name] = lst
+        }</span>
+}
+
+func handleSListAddTail(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SLPUSHTAIL &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        value := args[1]
+
+        if lst, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+                lst.AddToEnd(value) // Добавляем элемент в хвост списка
+        }</span> else<span class="cov0" title="0"> {
+                lst := Lists.NewSingleList()
+                names[name] = "sl"
+                lst.AddToEnd(value) // Создаем новый список и добавляем элемент
+                singlelists[name] = lst
+        }</span>
+}
+
+func handleSListRemoveHead(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SLDELHEAD &lt;list_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+
+        if lst, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+                value, err := lst.RemoveFromHead() // Удаляем элемент из головы списка
+                if err != nil </span><span class="cov0" title="0">{                    // обработка ошибки
+                        log.Fatalln(err)
+                }</span>
+                <span class="cov0" title="0">fmt.Println(value)</span>
+        } else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleSListRemoveTail(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SLDELTAIL &lt;list_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+
+        if lst, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+                value, err := lst.RemoveFromTail() // Удаляем элемент из хвоста списка
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatalln(err)
+                }</span>
+                <span class="cov0" title="0">fmt.Println(value)</span>
+        } else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleSListRemoveValue(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SLDELVALUE &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        value := args[1]
+
+        if lst, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+                err := lst.RemoveByValue(value) // Удаляем элемент по значению
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Fatalln(err)
+                }</span>
+        } else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleSListFindValue(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SLFINDVALUE &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        value := args[1]
+
+        if lst, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+                found := lst.FindByValue(value) // Ищем элемент по значению
+                fmt.Println(found)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleListAddHead(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: LPUSHHEAD &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if lst, ok := lists[name]; ok </span><span class="cov0" title="0">{
+                lst.AddToHead(value) // Добавляем элемент в голову списка
+        }</span> else<span class="cov8" title="1"> {
+                lst := Lists.NewList()
+                names[name] = "list"
+                lst.AddToHead(value) // Создаем новый список и добавляем элемент
+                lists[name] = lst
+        }</span>
+}
+
+func handleListAddTail(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: LPUSHTAIL &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if lst, ok := lists[name]; ok </span><span class="cov8" title="1">{
+                lst.AddToEnd(value) // Добавляем элемент в хвост списка
+        }</span> else<span class="cov0" title="0"> {
+                lst := Lists.NewList()
+                names[name] = "list"
+                lst.AddToEnd(value) // Создаем новый список и добавляем элемент
+                lists[name] = lst
+        }</span>
+}
+
+func handleListRemoveHead(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: LDELHEAD &lt;list_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+
+        if lst, ok := lists[name]; ok </span><span class="cov8" title="1">{
+                value, _ := lst.RemoveFromHead() // Удаляем элемент из головы списка
+                fmt.Println(value)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleListRemoveTail(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: LDELTAIL &lt;list_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+
+        if lst, ok := lists[name]; ok </span><span class="cov0" title="0">{
+                value, _ := lst.RemoveFromTail() // Удаляем элемент из хвоста списка
+                fmt.Println(value)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleListRemoveValue(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: LDELVALUE &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        value := args[1]
+
+        if lst, ok := lists[name]; ok </span><span class="cov0" title="0">{
+                lst.RemoveByValue(value) // Удаляем элемент по значению
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleListFindValue(args []string) <span class="cov0" title="0">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: LFINDVALUE &lt;list_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov0" title="0">name := args[0]
+        value := args[1]
+
+        if lst, ok := lists[name]; ok </span><span class="cov0" title="0">{
+                found := lst.FindByValue(value) // Ищем элемент по значению
+                fmt.Println(found)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("List %s not found", name) // Обработка случая, когда список не найден
+        }</span>
+}
+
+func handleQueuePush(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: QPUSH &lt;queue_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if q, ok := queues[name]; ok </span><span class="cov8" title="1">{
+                q.Push(value) // Добавляем элемент в очередь
+        }</span> else<span class="cov8" title="1"> {
+                q := Queue.NewQueue()
+                names[name] = "queue"
+                q.Push(value) // Создаем новую очередь и добавляем элемент
+                queues[name] = q
+        }</span>
+}
+
+func handleQueuePop(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: QPOP &lt;queue_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+
+        if q, ok := queues[name]; ok </span><span class="cov8" title="1">{
+                value, _ := q.Pop() // Удаляем элемент из очереди
+                fmt.Println(value)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("Queue %s not found", name) // Обработка случая, когда очередь не найдена
+        }</span>
+}
+
+func handleStackPush(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SPUSH &lt;stack_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if s, ok := stacks[name]; ok </span><span class="cov8" title="1">{
+                s.Push(value) // Добавляем элемент в стек
+        }</span> else<span class="cov8" title="1"> {
+                s := Stack.NewStack()
+                names[name] = "stack"
+                s.Push(value) // Создаем новый стек и добавляем элемент
+                stacks[name] = s
+        }</span>
+}
+
+func handleStackPop(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: SPOP &lt;stack_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+
+        if s, ok := stacks[name]; ok </span><span class="cov8" title="1">{
+                value, _ := s.Pop() // Удаляем элемент из стека
+                fmt.Println(value)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("Stack %s not found", name) // Обработка случая, когда стек не найден
+        }</span>
+}
+
+func handleHashSet(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 3 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: HSET &lt;hash_name&gt; &lt;key&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        key := args[1]
+        value := args[2]
+
+        if h, ok := hashtables[name]; ok </span><span class="cov8" title="1">{
+                h.Set(key, value) // Добавляем элемент в хеш-таблицу
+        }</span> else<span class="cov8" title="1"> {
+                h := HashTable.NewHashTable()
+                names[name] = "ht"
+                h.Set(key, value) // Создаем новую хеш-таблицу и добавляем элемент
+                hashtables[name] = h
+        }</span>
+}
+
+func handleHashGet(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: HGET &lt;hash_name&gt; &lt;key&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        key := args[1]
+
+        if h, ok := hashtables[name]; ok </span><span class="cov8" title="1">{
+                value, found := h.Get(key) // Получаем элемент из хеш-таблицы
+                if found </span><span class="cov8" title="1">{
+                        fmt.Println(value)
+                }</span> else<span class="cov0" title="0"> {
+                        fmt.Println("Key not found")
+                }</span>
+        } else<span class="cov0" title="0"> {
+                log.Fatalf("Hash table %s not found", name) // Обработка случая, когда хеш-таблица не найдена
+        }</span>
+}
+
+func handleHashDelete(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: HDEL &lt;hash_name&gt; &lt;key&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        key := args[1]
+
+        if h, ok := hashtables[name]; ok </span><span class="cov8" title="1">{
+                h.Delete(key) // Удаляем элемент из хеш-таблицы
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("Hash table %s not found", name) // Обработка случая, когда хеш-таблица не найдена
+        }</span>
+}
+
+func handleCBTAdd(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: TINSERT &lt;cbt_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if t, ok := cbtrees[name]; ok </span><span class="cov8" title="1">{
+                t.Add(value) // Добавляем элемент в полное бинарное дерево
+        }</span> else<span class="cov8" title="1"> {
+                t := CBTree.NewCBTree()
+                names[name] = "cbt"
+                t.Add(value) // Создаем новое полное бинарное дерево и добавляем элемент
+                cbtrees[name] = t
+        }</span>
+}
+
+func handleCBTFind(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 2 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: TFIND &lt;cbt_name&gt; &lt;value&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+        value := args[1]
+
+        if t, ok := cbtrees[name]; ok </span><span class="cov8" title="1">{
+                found := t.Find(value) // Ищем элемент в полном бинарном дереве
+                fmt.Println(found)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("CBTree %s not found", name) // Обработка случая, когда дерево не найдено
+        }</span>
+}
+
+func handleCBTIsComplete(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: TISCOMPLETE &lt;cbt_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+
+        if t, ok := cbtrees[name]; ok </span><span class="cov8" title="1">{
+                complete := t.IsComplete() // Проверяем, является ли дерево полным
+                fmt.Println(complete)
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("CBTree %s not found", name) // Обработка случая, когда дерево не найдено
+        }</span>
+}
+
+func handlePrint(args []string) <span class="cov8" title="1">{
+        if len(args) &lt; 1 </span><span class="cov0" title="0">{
+                log.Fatal("Usage: PRINT &lt;structure_name&gt;") // Проверка на правильное количество аргументов
+        }</span>
+        <span class="cov8" title="1">name := args[0]
+
+        if arr, ok := arrays[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(arr.Read()) // Выводим массив
+        }</span> else<span class="cov8" title="1"> if sl, ok := singlelists[name]; ok </span><span class="cov0" title="0">{
+                fmt.Println(sl.Read()) // выводим список
+        }</span> else<span class="cov8" title="1"> if lst, ok := lists[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(lst.Read()) // Выводим список
+        }</span> else<span class="cov8" title="1"> if q, ok := queues[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(q.Read()) // Выводим очередь
+        }</span> else<span class="cov8" title="1"> if s, ok := stacks[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(s.Read()) // Выводим стек
+        }</span> else<span class="cov8" title="1"> if h, ok := hashtables[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(h.Read()) // Выводим хеш-таблицу
+        }</span> else<span class="cov8" title="1"> if t, ok := cbtrees[name]; ok </span><span class="cov8" title="1">{
+                fmt.Println(t.Read()) // Выводим полное бинарное дерево
+        }</span> else<span class="cov0" title="0"> {
+                log.Fatalf("Structure %s not found", name) // Обработка случая, когда структура данных не найдена
+        }</span>
+}
+
+func loadFromFile(file string) <span class="cov8" title="1">{
+        data, err := os.ReadFile(file)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("Failed to read file: %v\n", err) // Обработка ошибки чтения файла
+                return
+        }</span>
+
+        <span class="cov8" title="1">var savedData map[string]interface{}
+        if err := json.Unmarshal(data, &amp;savedData); err != nil </span><span class="cov8" title="1">{
+                fmt.Printf("Failed to unmarshal JSON: %v\n", err) // Обработка ошибки десериализации JSON
+                return
+        }</span>
+
+        <span class="cov8" title="1">names, _ = savedData["names"].(map[string]interface{})
+        delete(savedData, "names")
+
+        for k, v := range savedData </span><span class="cov8" title="1">{
+
+                name := names[k].(string)
+                switch name </span>{
+                case "array":<span class="cov8" title="1">
+                        arr := Array.NewArray()
+                        for _, item := range v.([]interface{}) </span><span class="cov8" title="1">{
+                                arr.AddToEnd(item) // Добавляем элементы в массив
+                        }</span>
+                        <span class="cov8" title="1">arrays[k] = arr</span>
+
+                case "list":<span class="cov8" title="1">
+                        lst := Lists.NewList()
+                        for _, item := range v.([]interface{}) </span><span class="cov8" title="1">{
+                                lst.AddToEnd(item) // Добавляем элементы в список
+                        }</span>
+                        <span class="cov8" title="1">lists[k] = lst</span>
+
+                case "sl":<span class="cov0" title="0">
+                        lst := Lists.NewSingleList()
+                        for _, item := range v.([]interface{}) </span><span class="cov0" title="0">{
+                                lst.AddToEnd(item)
+                        }</span>
+                        <span class="cov0" title="0">singlelists[k] = lst</span>
+
+                case "cbt":<span class="cov8" title="1">
+                        cbt := CBTree.NewCBTree()
+                        for _, item := range v.([]interface{}) </span><span class="cov8" title="1">{
+                                cbt.Add(item)
+                        }</span>
+                        <span class="cov8" title="1">cbtrees[k] = cbt</span>
+
+                case "stack":<span class="cov8" title="1">
+                        s := Stack.NewStack()
+                        for _, item := range v.([]interface{}) </span><span class="cov8" title="1">{
+                                s.Push(item)
+                        }</span>
+                        <span class="cov8" title="1">stacks[k] = s</span>
+
+                case "queue":<span class="cov8" title="1">
+                        q := Queue.NewQueue()
+                        for _, item := range v.([]interface{}) </span><span class="cov8" title="1">{
+                                q.Push(item)
+                        }</span>
+                        <span class="cov8" title="1">queues[k] = q</span>
+                case "ht":<span class="cov8" title="1">
+                        h := HashTable.NewHashTable()
+                        for k1, v1 := range v.(map[string]interface{}) </span><span class="cov8" title="1">{
+                                h.Set(k1, v1) // Добавляем элементы в хеш-таблицу
+                        }</span>
+                        <span class="cov8" title="1">hashtables[k] = h</span>
+                }
+        }
+}
+
+func saveToFile(file string) <span class="cov8" title="1">{
+        data := make(map[string]interface{})
+
+        data["names"] = names
+
+        for k, v := range arrays </span><span class="cov8" title="1">{
+                data[k] = v.Read() // Сохраняем массивы
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range lists </span><span class="cov8" title="1">{
+                data[k] = v.Read() // Сохраняем списки
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range singlelists </span><span class="cov0" title="0">{
+                data[k] = v.Read()
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range hashtables </span><span class="cov8" title="1">{
+                data[k] = v.Read() // Сохраняем хеш-таблицы
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range cbtrees </span><span class="cov8" title="1">{
+                data[k] = v.Read() // Сохраняем полные бинарные деревья
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range queues </span><span class="cov8" title="1">{
+                data[k] = v.Read()
+        }</span>
+
+        <span class="cov8" title="1">for k, v := range stacks </span><span class="cov8" title="1">{
+                data[k] = v.Read()
+        }</span>
+
+        <span class="cov8" title="1">jsonData, err := json.Marshal(data)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to marshal JSON: %v", err) // Обработка ошибки сериализации JSON
+        }</span>
+
+        <span class="cov8" title="1">if err := os.WriteFile(file, jsonData, 0777); err != nil </span><span class="cov0" title="0">{
+                log.Fatalf("Failed to write file: %v", err) // Обработка ошибки записи файла. 0777 - rwx
+        }</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -1,93 +1,147 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
+	"unicode"
 )
 
-func isOpeningTag(s string) bool {
-	return len(s) >= 2 && s[0] == '<' && s[1] != '/' && s[len(s)-1] == '>'
-}
-
-func isClosingTag(s string) bool {
-	return len(s) >= 3 && s[0] == '<' && s[1] == '/' && s[len(s)-1] == '>'
-}
-
-func getTagName(s string) string {
-	if isOpeningTag(s) {
-		return s[1 : len(s)-1]
-	} else if isClosingTag(s) {
-		return s[2 : len(s)-1]
+// checkTags проверяет, является ли переданная строка корректным XML-подобным тегом.
+func checkTags(xml string) bool {
+	// Проверяем, что строка начинается с '<' и заканчивается '>'.
+	if xml[0] != '<' || xml[len(xml)-1] != '>' {
+		return false
 	}
-	return ""
-}
 
-func fixTag(tag string, expectedTagName string) string {
-	// Try to fix the tag by changing one character
-	if isClosingTag(tag) {
-		// If it's a closing tag, try to fix it to match the expected opening tag
-		return "</" + expectedTagName + ">"
-	} else if isOpeningTag(tag) {
-		// If it's an opening tag, try to fix it to match the expected closing tag
-		return "<" + expectedTagName + ">"
-	} else {
-		// If it's neither, try to fix it to be a closing tag
-		return "</" + expectedTagName + ">"
-	}
-}
+	// Создаем стек для хранения открывающих тегов.
+	stack := NewStack()
+	i := 0
 
-func restoreXML(input string) string {
-	tags := strings.Fields(input)
-	stack := []string{}
+	// Основной цикл для обработки строки.
+	for {
+		// Если достигли конца строки, выходим из цикла.
+		if i == len(xml) {
+			break
+		}
 
-	for _, tag := range tags {
-		if isOpeningTag(tag) {
-			stack = append(stack, tag)
-		} else if isClosingTag(tag) {
-			if len(stack) == 0 {
-				continue
-			}
-			openingTag := stack[len(stack)-1]
-			openingTagName := getTagName(openingTag)
-			closingTagName := getTagName(tag)
+		// Проверяем, что текущий символ - '<'.
+		if xml[i] != '<' {
+			return false
+		}
+		i++
 
-			if openingTagName != closingTagName {
-				// Try to fix the closing tag
-				fixedTag := fixTag(tag, openingTagName)
-				if isClosingTag(fixedTag) && getTagName(fixedTag) == openingTagName {
-					tag = fixedTag
-				}
-			}
+		// Флаг для определения, является ли тег закрывающим.
+		closingTag := false
+		if i < len(xml) && xml[i] == '/' {
+			closingTag = true
+			i++
+		}
 
-			if openingTagName == closingTagName {
-				stack = stack[:len(stack)-1]
-			}
+		// Проверяем, что следующий символ - строчная буква.
+		if i >= len(xml) || !unicode.IsLower(rune(xml[i])) {
+			return false
+		}
+
+		// Считываем тег.
+		tag := string(xml[i])
+		i++
+		for i < len(xml) && unicode.IsLower(rune(xml[i])) {
+			tag += string(xml[i])
+			i++
+		}
+
+		// Проверяем, что тег заканчивается '>'.
+		if i >= len(xml) || xml[i] != '>' {
+			return false
+		}
+		i++
+
+		// Если тег открывающий, добавляем его в стек.
+		if !closingTag {
+			stack.Push(tag)
 		} else {
-			// If the tag is invalid, try to fix it
-			if len(stack) > 0 {
-				openingTag := stack[len(stack)-1]
-				openingTagName := getTagName(openingTag)
-				fixedTag := fixTag(tag, openingTagName)
-				if isClosingTag(fixedTag) && getTagName(fixedTag) == openingTagName {
-					tag = fixedTag
-					stack = stack[:len(stack)-1]
-				}
+			// Если тег закрывающий, проверяем его соответствие последнему открывающему.
+			lastTag, err := stack.Pop()
+			if err != nil {
+				return false
+			}
+			if lastTag != tag {
+				return false
 			}
 		}
 	}
 
-	// Reconstruct the XML string
-	var result strings.Builder
-	for _, tag := range stack {
-		result.WriteString(tag + " ")
-	}
+	// Если стек пуст, значит все теги закрыты корректно.
+	return len(stack.Read()) == 0
+}
 
-	return strings.TrimSpace(result.String())
+// changeSymbol изменяет один символ в строке и проверяет, является ли новая строка корректной.
+func changeSymbol(str []rune, j rune, result *[][]rune) {
+	for i := 0; i < len(str); i++ {
+		// Создаем копию строки.
+		temp := make([]rune, len(str))
+		copy(temp, str)
+
+		// Изменяем символ.
+		temp[i] = j
+
+		// Проверяем, является ли новая строка корректной.
+		if checkTags(string(temp)) {
+			*result = append(*result, temp)
+		}
+	}
 }
 
 func main() {
-	input := "<a> //a> <a> <b> </b> </a>"
-	fmt.Println("Исходная строка:", input)
-	restored := restoreXML(input)
-	fmt.Println("Восстановленная строка:", restored)
+	// Приглашение пользователю ввести строку.
+	fmt.Print("Введите XML строку: ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	str := scanner.Text()
+	str = strings.ReplaceAll(str, " ", "")
+
+	// Преобразуем строку в массив рун для удобства работы с символами.
+	stringRunes := []rune(str)
+
+	// Счетчики для символов '<', '>', '/' и букв.
+	openedChevron := 0
+	closedChevron := 0
+	slashes := 0
+	letters := make(map[rune]int)
+
+	// Результирующий массив для корректных строк.
+	result := [][]rune{}
+
+	// Подсчитываем количество символов '<', '>', '/' и букв.
+	for _, r := range stringRunes {
+		if r == '<' {
+			openedChevron++
+		} else if r == '>' {
+			closedChevron++
+		} else if r == '/' {
+			slashes++
+		}
+		letters[r]++
+	}
+
+	// Перебираем возможные символы для замены.
+	for _, j := range []rune("<>/qwertyuiopasdfghjklzxcvbnm") {
+		// Проверяем условия для замены символов.
+		if j == '<' && openedChevron%2 != 0 {
+			changeSymbol(stringRunes, j, &result)
+		} else if j == '>' && closedChevron%2 != 0 {
+			changeSymbol(stringRunes, j, &result)
+		} else if j == '/' && closedChevron/2 != slashes {
+			changeSymbol(stringRunes, j, &result)
+		} else if count, exists := letters[j]; exists && count%2 != 0 {
+			changeSymbol(stringRunes, j, &result)
+		}
+	}
+
+	// Выводим все найденные корректные строки.
+	for _, res := range result {
+		fmt.Println("Исправленная строка:", string(res))
+	}
 }
