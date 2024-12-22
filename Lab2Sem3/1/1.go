@@ -1,108 +1,93 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"strings"
 )
 
-// Функция для проверки корректности XML-строки
-func isCorrectXML(xml string) bool {
-	stack := []string{}
-	tags := strings.Split(xml, ">")
-	for _, tag := range tags {
-		if len(tag) == 0 {
-			continue
-		}
-		tag = strings.TrimSuffix(tag, "<")
-		if !strings.HasPrefix(tag, "/") {
-			// Это открывающий тег
-			stack = append(stack, tag)
-		} else {
-			// Это закрывающий тег
-			if len(stack) == 0 {
-				return false
-			}
-			lastTag := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
-			if lastTag != tag[1:] {
-				return false
-			}
-		}
-	}
-	return len(stack) == 0
+func isOpeningTag(s string) bool {
+	return len(s) >= 2 && s[0] == '<' && s[1] != '/' && s[len(s)-1] == '>'
 }
 
-// Функция для исправления XML-строки
-func fixXML(xml string) string {
-	for i := 0; i < len(xml); i++ {
-		// Попробуем заменить каждый символ
-		for c := 'a'; c <= 'z'; c++ {
-			if string(xml[i]) == string(c) {
+func isClosingTag(s string) bool {
+	return len(s) >= 3 && s[0] == '<' && s[1] == '/' && s[len(s)-1] == '>'
+}
+
+func getTagName(s string) string {
+	if isOpeningTag(s) {
+		return s[1 : len(s)-1]
+	} else if isClosingTag(s) {
+		return s[2 : len(s)-1]
+	}
+	return ""
+}
+
+func fixTag(tag string, expectedTagName string) string {
+	// Try to fix the tag by changing one character
+	if isClosingTag(tag) {
+		// If it's a closing tag, try to fix it to match the expected opening tag
+		return "</" + expectedTagName + ">"
+	} else if isOpeningTag(tag) {
+		// If it's an opening tag, try to fix it to match the expected closing tag
+		return "<" + expectedTagName + ">"
+	} else {
+		// If it's neither, try to fix it to be a closing tag
+		return "</" + expectedTagName + ">"
+	}
+}
+
+func restoreXML(input string) string {
+	tags := strings.Fields(input)
+	stack := []string{}
+
+	for _, tag := range tags {
+		if isOpeningTag(tag) {
+			stack = append(stack, tag)
+		} else if isClosingTag(tag) {
+			if len(stack) == 0 {
 				continue
 			}
-			fixedXML := xml[:i] + string(c) + xml[i+1:]
-			if isCorrectXML(fixedXML) {
-				return fixedXML
-			}
-		}
-		if xml[i] == '<' {
-			fixedXML := xml[:i] + ">" + xml[i+1:]
-			if isCorrectXML(fixedXML) {
-				return fixedXML
-			}
-		}
-		if xml[i] == '>' {
-			fixedXML := xml[:i] + "<" + xml[i+1:]
-			if isCorrectXML(fixedXML) {
-				return fixedXML
-			}
-		}
-		if xml[i] == '/' {
-			fixedXML := xml[:i] + "" + xml[i+1:]
-			if isCorrectXML(fixedXML) {
-				return fixedXML
-			}
-		}
-	}
+			openingTag := stack[len(stack)-1]
+			openingTagName := getTagName(openingTag)
+			closingTagName := getTagName(tag)
 
-	// Если простые замены не помогли, попробуем более сложные варианты
-	for i := 0; i < len(xml); i++ {
-		if xml[i] == '<' {
-			// Попробуем заменить на закрывающий тег
-			for j := i + 1; j < len(xml); j++ {
-				if xml[j] == '>' {
-					// Найдем имя тега
-					tagName := xml[i+1 : j]
-					if tagName != "" && !strings.HasPrefix(tagName, "/") {
-						// Создадим закрывающий тег
-						closingTag := "</" + tagName + ">"
-						fixedXML := xml[:i] + closingTag + xml[j+1:]
-						if isCorrectXML(fixedXML) {
-							return fixedXML
-						}
-					}
+			if openingTagName != closingTagName {
+				// Try to fix the closing tag
+				fixedTag := fixTag(tag, openingTagName)
+				if isClosingTag(fixedTag) && getTagName(fixedTag) == openingTagName {
+					tag = fixedTag
+				}
+			}
+
+			if openingTagName == closingTagName {
+				stack = stack[:len(stack)-1]
+			}
+		} else {
+			// If the tag is invalid, try to fix it
+			if len(stack) > 0 {
+				openingTag := stack[len(stack)-1]
+				openingTagName := getTagName(openingTag)
+				fixedTag := fixTag(tag, openingTagName)
+				if isClosingTag(fixedTag) && getTagName(fixedTag) == openingTagName {
+					tag = fixedTag
+					stack = stack[:len(stack)-1]
 				}
 			}
 		}
-		if xml[i] == '/' {
-			// Попробуем удалить слэш
-			fixedXML := xml[:i] + xml[i+1:]
-			if isCorrectXML(fixedXML) {
-				return fixedXML
-			}
-		}
 	}
 
-	return xml // Если ничего не помогло, вернем исходную строку
+	// Reconstruct the XML string
+	var result strings.Builder
+	for _, tag := range stack {
+		result.WriteString(tag + " ")
+	}
+
+	return strings.TrimSpace(result.String())
 }
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	xml := scanner.Text()
-
-	fixedXML := fixXML(xml)
-	fmt.Println(fixedXML)
+	input := "<a> //a> <a> <b> </b> </a>"
+	fmt.Println("Исходная строка:", input)
+	restored := restoreXML(input)
+	fmt.Println("Восстановленная строка:", restored)
 }

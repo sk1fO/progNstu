@@ -1,9 +1,1 @@
-{
-    "commands": [
-        ["SETADD", "apple"],
-        ["SETADD", "banana"],
-        ["SET_AT", "apple"],
-        ["SETDEL", "banana"],
-        ["SET_AT", "banana"]
-    ]
-}
+["element3","element1","element2"]
