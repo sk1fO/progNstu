@@ -1,0 +1,18 @@
+@startuml name
+
+' Определение классов
+class PasswordValidator {
+    + bool isValid(const string& password) const
+}
+
+class User {
+    - string name
+    - string password
+    + User(const string& name, const string& password)
+    + void displayInfo() const
+}
+
+' Определение отношений между классами
+User --> PasswordValidator : Использует для проверки пароля
+
+@enduml
