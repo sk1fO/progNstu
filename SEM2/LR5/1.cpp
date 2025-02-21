@@ -1,179 +1,123 @@
 #include <iostream>
 #include <map>
-#include <vector>
-#include <string>
-#include <algorithm>
+using namespace std;
 
+// Структура для хранения информации о ячейке
 struct Cell {
-    std::string product;
-    int quantity;
+    string product; // Название товара
+    int quantity; // Количество товара
 };
 
-std::map<std::string, Cell> warehouse;
-int totalCapacity = 50400; // Вместимость для варианта 8
+// Класс для управления складом
+class Warehouse {
+private:
+    map<string, Cell> cells; // Контейнер для хранения ячеек склада
+    int totalCapacity; // Общая вместимость склада
+    int currentLoad; // Текущая загрузка склада
 
-bool isValidAddress(const std::string& address) {
-    // Проверка длины адреса (6 символов)
-    if (address.length() != 6) {
-        return false;
-    }
-
-    // Проверка зоны хранения (A, Б, В)
-    char zone = address[0];
-    if (zone != 'A' && zone != 'Б' && zone != 'В') {
-        return false;
-    }
-
-    // Проверка номера стеллажа (01-14)
-    std::string shelfStr = address.substr(1, 2);
-    try {
-        int shelf = std::stoi(shelfStr);
-        if (shelf < 1 || shelf > 14) {
-            return false;
-        }
-    } catch (const std::invalid_argument&) {
-        return false; // Некорректное число
-    }
-
-    // Проверка номера вертикальной секции (01-06)
-    std::string sectionStr = address.substr(3, 2);
-    try {
-        int section = std::stoi(sectionStr);
-        if (section < 1 || section > 6) {
-            return false;
-        }
-    } catch (const std::invalid_argument&) {
-        return false; // Некорректное число
-    }
-
-    // Проверка номера полки (01-20)
-    std::string levelStr = address.substr(5, 2);
-    try {
-        int level = std::stoi(levelStr);
-        if (level < 1 || level > 20) {
-            return false;
-        }
-    } catch (const std::invalid_argument&) {
-        return false; // Некорректное число
-    }
-
-    return true;
-}
-
-void addProduct(const std::string& product, int quantity, const std::string& address) {
-    if (!isValidAddress(address)) {
-        std::cout << "Ошибка: некорректный адрес ячейки " << address << std::endl;
-        return;
-    }
-
-    if (warehouse.find(address) != warehouse.end()) {
-        if (warehouse[address].quantity + quantity > 10) {
-            std::cout << "Ошибка: превышена вместимость ячейки " << address << std::endl;
-            return;
-        }
-        warehouse[address].quantity += quantity;
-    } else {
-        if (quantity > 10) {
-            std::cout << "Ошибка: превышена вместимость ячейки " << address << std::endl;
-            return;
-        }
-        warehouse[address] = {product, quantity};
-    }
-    std::cout << "Товар добавлен в ячейку " << address << std::endl;
-}
-
-void removeProduct(const std::string& product, int quantity, const std::string& address) {
-    if (!isValidAddress(address)) {
-        std::cout << "Ошибка: некорректный адрес ячейки " << address << std::endl;
-        return;
-    }
-
-    if (warehouse.find(address) == warehouse.end() || warehouse[address].product != product) {
-        std::cout << "Ошибка: товар не найден в ячейке " << address << std::endl;
-        return;
-    }
-    if (warehouse[address].quantity < quantity) {
-        std::cout << "Ошибка: недостаточно товара в ячейке " << address << std::endl;
-        return;
-    }
-    warehouse[address].quantity -= quantity;
-    if (warehouse[address].quantity == 0) {
-        warehouse.erase(address);
-    }
-    std::cout << "Товар удален из ячейки " << address << std::endl;
-}
-
-void printWarehouseInfo() {
-    int totalUsed = 0;
-    std::map<char, int> zoneUsage;
-    std::vector<std::string> emptyCells;
-
-    for (int z = 0; z < 3; ++z) {
-        char zone = 'A' + z;
-        zoneUsage[zone] = 0;
-        for (int s = 1; s <= 14; ++s) {
-            for (int v = 1; v <= 6; ++v) {
-                for (int p = 1; p <= 20; ++p) {
-                    std::string address = std::string(1, zone) + (s < 10 ? "0" : "") + std::to_string(s) + (v < 10 ? "0" : "") + std::to_string(v) + (p < 10 ? "0" : "") + std::to_string(p);
-                    if (warehouse.find(address) != warehouse.end()) {
-                        totalUsed += warehouse[address].quantity;
-                        zoneUsage[zone] += warehouse[address].quantity;
-                    } else {
-                        emptyCells.push_back(address);
+public:
+    Warehouse() : totalCapacity(1920), currentLoad(0) {
+        // Инициализация ячеек
+        char zones[] = {'A', 'B'}; // Зоны склада
+        for (char zone : zones) { // Перебор зон
+            for (int shelf = 1; shelf <= 6; ++shelf) { // Перебор полок
+                for (int section = 1; section <= 4; ++section) { // Перебор секций
+                    for (int row = 1; row <= 4; ++row) { // Перебор рядов
+                        string address = zone + to_string(shelf) + to_string(section) + to_string(row); // Формирование адреса ячейки
+                        cells[address] = {"Пусто", 0}; // Инициализация ячейки как пустой
                     }
                 }
             }
         }
     }
 
-    std::cout << "Общая загруженность склада: " << (totalUsed * 100 / totalCapacity) << "%" << std::endl;
-    for (auto& zone : zoneUsage) {
-        std::cout << "Загруженность зоны " << zone.first << ": " << (zone.second * 100 / (totalCapacity / 3)) << "%" << std::endl;
+    void addProduct(const string& product, int quantity, const string& address) {
+        if (cells.find(address) == cells.end()) { // Проверка наличия ячейки по адресу
+            cout << "Адрес ячейки не найден." << endl;
+            return;
+        }
+        Cell& cell = cells[address]; // Получение ссылки на ячейку
+        if (cell.product != "Пусто" && cell.product != product) { // Проверка занятости ячейки
+            cout << "Ячейка уже занята другим товаром." << endl;
+            return;
+        }
+        if (cell.quantity + quantity > 10) { // Проверка вместимости ячейки
+            cout << "Недостаточно места в ячейке." << endl;
+            return;
+        }
+        cell.product = product; // Установка товара в ячейку
+        cell.quantity += quantity; // Увеличение количества товара
+        currentLoad += quantity; // Увеличение текущей загрузки склада
+        cout << "Товар добавлен в ячейку " << address << "." << endl;
     }
 
-    std::cout << "Содержимое ячеек:" << std::endl;
-    for (auto& cell : warehouse) {
-        std::cout << cell.first << ": " << cell.second.product << " - " << cell.second.quantity << " единиц" << std::endl;
+    void removeProduct(const string& product, int quantity, const string& address) {
+        if (cells.find(address) == cells.end()) { // Проверка наличия ячейки по адресу
+            cout << "Адрес ячейки не найден." << endl;
+            return;
+        }
+        Cell& cell = cells[address]; // Получение ссылки на ячейку
+        if (cell.product != product) { // Проверка соответствия товара
+            cout << "Ячейка содержит другой товар." << endl;
+            return;
+        }
+        if (cell.quantity < quantity) { // Проверка наличия товара в ячейке
+            cout << "Недостаточно товара в ячейке для удаления." << endl;
+            return;
+        }
+        cell.quantity -= quantity; // Уменьшение количества товара
+        if (cell.quantity == 0) { // Проверка на пустую ячейку
+            cell.product = "Пусто";
+        }
+        currentLoad -= quantity; // Уменьшение текущей загрузки склада
+        cout << "Товар удален из ячейки " << address << "." << endl;
     }
 
-    std::cout << "Пустые ячейки:" << std::endl;
-    for (auto& cell : emptyCells) {
-        std::cout << cell << std::endl;
+    void info() {
+        cout << "Общая загрузка склада: " << (currentLoad * 100 / totalCapacity) << "%" << endl; // Вывод загрузки склада
+        for (const auto& [address, cell] : cells) { // Перебор ячеек
+            if (cell.product != "Пусто") { // Проверка на пустую ячейку
+                cout << "Ячейка " << address << ": " << cell.product << " (" << cell.quantity << " единиц)" << endl; // Вывод информации о ячейке
+            }
+        }
+        cout << "Пустые ячейки: ";
+        for (const auto& [address, cell] : cells) { // Перебор ячеек
+            if (cell.product == "Пусто") { // Проверка на пустую ячейку
+                cout << address << " "; // Вывод адреса пустой ячейки
+            }
+        }
+        cout << endl;
     }
-}
+};
 
 int main() {
-    std::string command;
-    while (true) {
-        std::cout << "Введите команду: ";
-        std::getline(std::cin, command);
-        if (command.substr(0, 3) == "ADD") {
-            std::string product;
-            int quantity;
-            std::string address;
-            size_t pos = command.find(' ', 4);
-            product = command.substr(4, pos - 4);
-            size_t pos2 = command.find(' ', pos + 1);
-            quantity = std::stoi(command.substr(pos + 1, pos2 - pos - 1));
-            address = command.substr(pos2 + 1);
-            addProduct(product, quantity, address);
-        } else if (command.substr(0, 6) == "REMOVE") {
-            std::string product;
-            int quantity;
-            std::string address;
-            size_t pos = command.find(' ', 7);
-            product = command.substr(7, pos - 7);
-            size_t pos2 = command.find(' ', pos + 1);
-            quantity = std::stoi(command.substr(pos + 1, pos2 - pos - 1));
-            address = command.substr(pos2 + 1);
-            removeProduct(product, quantity, address);
-        } else if (command == "INFO") {
-            printWarehouseInfo();
-        } else if (command == "EXIT") {
+
+    Warehouse warehouse; // Создание объекта склада
+    string command, product, address; // Объявление переменных для команд, товара и адреса
+    int quantity; // Объявление переменной для количества товара
+
+    while (true) { // цикл для ввода команд
+        cout << "Введите команду (add, remove, info, end): ";
+        cin >> command; // Ввод команды
+
+        if (command == "end") { // Проверка на команду завершения
             break;
+        }
+
+        if (command == "add") { // Проверка на команду добавления товара
+            cout << "Введите название товара, количество и адрес ячейки: ";
+            cin >> product >> quantity >> address; // Ввод данных о товаре
+            warehouse.addProduct(product, quantity, address); // Добавление товара
+        } else if (command == "remove") { // Проверка на команду удаления товара
+            cout << "Введите название товара, количество и адрес ячейки: ";
+            cin >> product >> quantity >> address; // Ввод данных о товаре
+            warehouse.removeProduct(product, quantity, address); // Удаление товара
+        } else if (command == "info") { // Проверка на команду вывода информации
+            warehouse.info(); // Вывод информации о складе
         } else {
-            std::cout << "Неизвестная команда" << std::endl;
+            cout << "Неизвестная команда." << endl; // Вывод сообщения о неизвестной команде
         }
     }
+
     return 0;
 }
