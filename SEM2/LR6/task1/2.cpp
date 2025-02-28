@@ -33,7 +33,7 @@ int sumOfDigits(int number) {
 // Функция для поиска строки с наименьшей суммой цифр элементов
 int findRowWithMinDigitSum(const vector<vector<int>>& matrix) {
     int M = matrix.size(); // Определение количества строк
-    int minSum = 1000000; // Инициализация минимальной суммы как максимально возможное целое число
+    int minSum = 2000000; // Инициализация минимальной суммы как максимально возможное целое число
     int minRowIndex = -1; // Инициализация индекса строки с минимальной суммой
 
     for (int i = 0; i < M; ++i) { // Цикл по строкам
@@ -51,7 +51,6 @@ int findRowWithMinDigitSum(const vector<vector<int>>& matrix) {
 }
 
 int main() {
-    setlocale(LC_ALL, "rus");
     srand(time(NULL));
 
     int M, N;

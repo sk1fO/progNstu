@@ -1,58 +1,85 @@
 #include <iostream>
-#include <map>
+#include <unordered_map>
+#include <unordered_set>
+#include <string>
 #include <vector>
-#include <algorithm>
+
 using namespace std;
 
+// Мапа в мапе для хранения друзей
+unordered_map<string, unordered_set<string>> friends;
+
+// Функция для добавления друзей
+void addFriends(const string& i, const string& j) {
+    if (i.empty() || j.empty()) {
+        cout << "ОШИБКА: Имена не могут быть пустыми." << endl;
+        return;
+    }
+    friends[i].insert(j);
+    friends[j].insert(i);
+    cout << "Дружба между " << i << " и " << j << " добавлена." << endl;
+}
+
+// Функция для подсчета количества друзей
+int countFriends(const string& i) {
+    if (i.empty()) {
+        cout << "ОШИБКА: Имя не может быть пустым." << endl;
+        return -1;
+    }
+    return friends[i].size();
+}
+
+// Функция для проверки, являются ли два пользователя друзьями
+string areFriends(const string& i, const string& j) {
+    if (i.empty() || j.empty()) {
+        return "ОШИБКА: Имена не могут быть пустыми.";
+    }
+    if (friends[i].count(j)) {
+        return "ДА";
+    }
+    return "НЕТ";
+}
+
 int main() {
-    int N;
-    cin >> N; // Считываем количество операций
-
-    map<int, vector<string>> schedule; // Создаем ассоциативный массив для хранения расписания
-    int currentMonth = 1; // Начинаем с первого месяца
-
-    for (int i = 0; i < N; ++i) {
+    while (true) {
         string command;
-        getline(cin, command); // Считываем команду полностью
+        cout << "Введите команду (FRIENDS, COUNT, QUESTION, exit): ";
+        cin >> command;
 
-        if (command.substr(0, 5) == "class") { // Если команда начинается с "CLASS"
-            int day = stoi(command.substr(6, command.find(' ', 6) - 6)); // Извлекаем день
-            string subject = command.substr(command.find(' ', 6) + 1); // Извлекаем предмет
-            if (find(schedule[day].begin(), schedule[day].end(), subject) == schedule[day].end()) {
-                // Проверяем, существует ли уже такое занятие
-                schedule[day].push_back(subject); // Добавляем предмет в расписание на указанный день
+        if (command == "exit") {
+            cout << "Завершение программы." << endl;
+            break;
+        } else if (command == "FRIENDS") {
+            string i, j;
+            cin >> i >> j;
+            if (i.empty() || j.empty()) {
+                cout << "ОШИБКА: Имена не могут быть пустыми." << endl;
+                continue;
             }
-        } else if (command == "next") { // Если команда "NEXT"
-            map<int, vector<string>> newSchedule; // Создаем новое расписание для следующего месяца
-            int lastDay = 0;
-            for (const auto& entry : schedule) { // Находим последний день текущего месяца
-                if (entry.first > lastDay) {
-                    lastDay = entry.first;
-                }
+            addFriends(i, j);
+        } else if (command == "COUNT") {
+            string i;
+            cin >> i;
+            if (i.empty()) {
+                cout << "ОШИБКА: Имя не может быть пустым." << endl;
+                continue;
             }
-            for (const auto& entry : schedule) { // Переносим занятия в новое расписание
-                if (entry.first > lastDay) {
-                    newSchedule[lastDay].insert(newSchedule[lastDay].end(), entry.second.begin(), entry.second.end());
-                } else {
-                    newSchedule[entry.first] = entry.second;
-                }
+            int count = countFriends(i);
+            if (count != -1) {
+                cout << "Количество друзей у " << i << ": " << count << endl;
             }
-            schedule = newSchedule; // Обновляем текущее расписание
-            currentMonth++; // Переходим к следующему месяцу
-        } else if (command.substr(0, 4) == "view") { // Если команда начинается с "VIEW"
-            int day = stoi(command.substr(5)); // Извлекаем день
-            if (schedule.find(day) != schedule.end() && !schedule[day].empty()) { // Если есть занятия в этот день
-                cout << "В " << day << " день " << schedule[day].size() << " занятий в университете: ";
-                for (size_t j = 0; j < schedule[day].size(); ++j) { // Выводим все занятия
-                    if (j > 0) cout << ", ";
-                    cout << schedule[day][j];
-                }
-                cout << endl;
-            } else { // Если занятий нет
-                cout << "В " << day << " день мы свободны!" << endl;
+        } else if (command == "QUESTION") {
+            string i, j;
+            cin >> i >> j;
+            if (i.empty() || j.empty()) {
+                cout << "ОШИБКА: Имена не могут быть пустыми." << endl;
+                continue;
             }
+            cout << "Являются ли " << i << " и " << j << " друзьями? " << areFriends(i, j) << endl;
+        } else {
+            cout << "ОШИБКА: Неизвестная команда." << endl;
         }
     }
 
-    return 0; // Завершение программы
+    return 0;
 }

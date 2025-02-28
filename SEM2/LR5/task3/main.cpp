@@ -1,27 +1,62 @@
-#include <iostream> 
-#include <sstream> 
-#include "FlightSchedule.h" 
+#include <iostream>
+#include <sstream>
+#include "FlightSchedule.h"
 
-using namespace std; 
+using namespace std;
 
-int main() { // Точка входа в программу
-    FlightSchedule schedule; // Создание объекта класса FlightSchedule для управления расписанием
-    string input; // Переменная для хранения входной строки
-    while (getline(cin, input)) { // Чтение строк из стандартного ввода до EOF
-        istringstream iss(input); // Создание потока строк для обработки входной строки
-        string commandStr; // Переменная для хранения команды
-        iss >> commandStr; // Чтение команды из потока строк
-        if (commandStr == "create_plane") { // Проверка, является ли команда командой создания самолета
-            schedule.processCommand(Type::CREATE_PLANE, input.substr(input.find(' ') + 1)); // Обработка команды создания самолета
-        } else if (commandStr == "planes_for_town") { // Проверка, является ли команда командой получения самолетов по городу
-            schedule.processCommand(Type::PLANES_FOR_TOWN, input.substr(input.find(' ') + 1)); // Обработка команды получения самолетов по городу
-        } else if (commandStr == "towns_for_plane") { // Проверка, является ли команда командой получения городов по самолету
-            schedule.processCommand(Type::TOWNS_FOR_PLANE, input.substr(input.find(' ') + 1)); // Обработка команды получения городов по самолету
-        } else if (commandStr == "planes") { // Проверка, является ли команда командой отображения всех самолетов
-            schedule.processCommand(Type::PLANES, ""); // Обработка команды отображения всех самолетов
-        } else { // Если команда не распознана
-            cout << "Error: " << commandStr << endl; // Вывод сообщения об ошибке
+void displayMenu() {
+    cout << "Система управления расписанием полетов" << endl;
+    cout << "1. Создать самолет" << endl;
+    cout << "2. Получить самолеты для города" << endl;
+    cout << "3. Получить города для самолета" << endl;
+    cout << "4. Показать все самолеты" << endl;
+    cout << "5. Выход" << endl;
+    cout << "Введите ваш выбор: ";
+}
+
+int main() {
+    FlightSchedule schedule;
+    int choice;
+    string input;
+
+    while (true) {
+        displayMenu();
+        cin >> choice;
+        cin.ignore(); // Игнорируем оставшийся символ новой строки
+
+        switch (choice) {
+            case 1: {
+                cout << "Введите название самолета и города через пробел (например, Самолет1 Город1 Город2 Город3): ";
+                getline(cin, input);
+                schedule.processCommand(Type::CREATE_PLANE, input);
+                break;
+            }
+            case 2: {
+                cout << "Введите название города: ";
+                getline(cin, input);
+                schedule.processCommand(Type::PLANES_FOR_TOWN, input);
+                break;
+            }
+            case 3: {
+                cout << "Введите название самолета: ";
+                getline(cin, input);
+                schedule.processCommand(Type::TOWNS_FOR_PLANE, input);
+                break;
+            }
+            case 4: {
+                schedule.processCommand(Type::PLANES, "");
+                break;
+            }
+            case 5: {
+                cout << "Выход из программы..." << endl;
+                return 0;
+            }
+            default: {
+                cout << "Неверный выбор. Пожалуйста, попробуйте снова." << endl;
+                break;
+            }
         }
     }
-    return 0; // Возвращение кода завершения программы
+
+    return 0;
 }
