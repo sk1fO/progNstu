@@ -1,0 +1,27 @@
+<mxfile>
+  <diagram name="UML Class">
+    <mxGraphModel>
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Классы -->
+        <mxCell id="consoleUI" value="«Класс»&#xa;ConsoleUI&#xa;--------------------&#xa;+ Run()" style="swimlane;whiteSpace=wrap;html=1;fillColor=#F8CECC;" vertex="1" parent="1">
+          <mxGeometry x="80" y="120" width="160" height="120" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="alertService" value="«Класс»&#xa;AlertService&#xa;--------------------&#xa;+ HandleAlert()" style="swimlane;whiteSpace=wrap;html=1;fillColor=#DAE8FC;" vertex="1" parent="1">
+          <mxGeometry x="320" y="120" width="160" height="120" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="mockDB" value="«Класс»&#xa;MockDatabase&#xa;--------------------&#xa;+ SaveAlert()" style="swimlane;whiteSpace=wrap;html=1;fillColor=#D5E8D4;" vertex="1" parent="1">
+          <mxGeometry x="560" y="120" width="160" height="120" as="geometry"/>
+        </mxCell>
+        
+        <!-- Связи -->
+        <mxCell id="conn1" value="" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="consoleUI" target="alertService"/>
+        <mxCell id="conn2" value="" style="endArrow=open;html=1;dashed=1;" edge="1" parent="1" source="alertService" target="mockDB"/>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
