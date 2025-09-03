@@ -28,9 +28,18 @@ const Courses: React.FC = () => {
           coursesAPI.getCourses()
         ]);
         setUser(userResponse);
-        setCourses(coursesResponse.data);
+        
+        // Проверяем, что coursesResponse.data является массивом
+        if (Array.isArray(coursesResponse.data)) {
+          setCourses(coursesResponse.data);
+        } else {
+          console.error('Ожидался массив курсов, но получено:', coursesResponse.data);
+          setCourses([]);
+          setError('Некорректный формат данных курсов');
+        }
       } catch (error: any) {
         setError(error.response?.data?.error || 'Ошибка загрузки данных');
+        setCourses([]);
       } finally {
         setLoading(false);
       }

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { RegisterData, LoginData, AuthResponse, User, Course } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000/api';
@@ -74,7 +74,10 @@ export const authAPI = {
 };
 
 export const coursesAPI = {
-  getCourses: () => api.get('/courses'),
+    
+  getCourses: async (): Promise<AxiosResponse<Course[]>> => {
+    return api.get('/courses');
+  },
   createCourse: (courseData: Omit<Course, 'id' | 'created_at' | 'teacher_id'>) => 
     api.post('/courses', courseData),
   updateCourse: (courseId: number, courseData: Partial<Course>) => 

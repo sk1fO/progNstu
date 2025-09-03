@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { coursesAPI, authAPI } from '../../services/api';
 import { Course, User } from '../../types';
+import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -15,10 +17,21 @@ const Dashboard: React.FC = () => {
           authAPI.getCurrentUser(),
           coursesAPI.getCourses()
         ]);
+        
         setUser(userResponse);
-        setCourses(coursesResponse.data);
+        
+        // Проверяем, что coursesResponse.data является массивом
+        if (Array.isArray(coursesResponse.data)) {
+          setCourses(coursesResponse.data);
+        } else {
+          console.error('Ожидался массив курсов, но получено:', coursesResponse.data);
+          setCourses([]);
+          setError('Некорректный формат данных курсов');
+        }
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
+        setError('Ошибка загрузки данных');
+        setCourses([]);
       } finally {
         setLoading(false);
       }
@@ -27,7 +40,8 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  if (loading) return <div>Загрузка...</div>;
+  if (loading) return <div className="loading">Загрузка...</div>;
+  if (error) return <div className="error-message">{error}</div>;
 
   return (
     <div style={{ padding: '20px' }}>
