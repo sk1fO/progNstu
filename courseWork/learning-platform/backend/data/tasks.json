@@ -1,48 +1,345 @@
 [
   {
     "id": 1,
-    "title": "Hello World",
-    "description": "Напишите программу, которая выводит 'Hello, World!'",
+    "title": "Максимум из двух чисел",
+    "description": "Напишите программу, которая находит максимальное из двух чисел",
     "difficulty": "easy",
-    "template": "#include <iostream>\n\nint main() {\n    // Ваш код здесь\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+    "template": "#include <iostream>\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // Ваш код здесь\n    if (a > b) {\n        std::cout << a << std::endl;\n    } else {\n        std::cout << b << std::endl;\n    }\n    return 0;\n}",
     "tests": [
       {
-        "input": "",
-        "expected_output": "Hello, World!",
-        "description": "Программа должна вывести 'Hello, World!'"
+        "input": "5 3",
+        "expected_output": "5",
+        "description": "Первое число больше"
+      },
+      {
+        "input": "-2 4",
+        "expected_output": "4",
+        "description": "Второе число больше"
+      },
+      {
+        "input": "7 7",
+        "expected_output": "7",
+        "description": "Числа равны"
       }
     ]
   },
   {
     "id": 2,
-    "title": "Сумма двух чисел",
-    "description": "Напишите программу, которая складывает два числа. Числа поступают на вход через пробел.",
+    "title": "Четное или нечетное",
+    "description": "Напишите программу, которая определяет, является ли число четным",
     "difficulty": "easy",
-    "template": "#include <iostream>\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // Ваш код здесь\n    std::cout << a + b << std::endl;\n    return 0;\n}",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    if (n % 2 == 0) {\n        std::cout << \"Even\" << std::endl;\n    } else {\n        std::cout << \"Odd\" << std::endl;\n    }\n    return 0;\n}",
     "tests": [
       {
-        "input": "2 3",
-        "expected_output": "5",
-        "description": "Сложение положительных чисел"
+        "input": "4",
+        "expected_output": "Even",
+        "description": "Четное число"
       },
       {
-        "input": "-5 10",
-        "expected_output": "5",
-        "description": "Сложение отрицательного и положительного числа"
+        "input": "7",
+        "expected_output": "Odd",
+        "description": "Нечетное число"
       },
       {
-        "input": "0 0",
-        "expected_output": "0",
-        "description": "Сложение нулей"
+        "input": "0",
+        "expected_output": "Even",
+        "description": "Ноль - четное число"
       }
     ]
   },
   {
     "id": 3,
-    "title": "Факториал",
-    "description": "Напишите программу, которая вычисляет факториал числа",
+    "title": "Сумма чисел от 1 до N",
+    "description": "Напишите программу, которая вычисляет сумму чисел от 1 до N",
+    "difficulty": "easy",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    int sum = 0;\n    for (int i = 1; i <= n; i++) {\n        sum += i;\n    }\n    std::cout << sum << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5",
+        "expected_output": "15",
+        "description": "Сумма от 1 до 5"
+      },
+      {
+        "input": "1",
+        "expected_output": "1",
+        "description": "Сумма от 1 до 1"
+      },
+      {
+        "input": "10",
+        "expected_output": "55",
+        "description": "Сумма от 1 до 10"
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Обратный порядок",
+    "description": "Напишите программу, которая выводит числа от N до 1",
+    "difficulty": "easy",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    for (int i = n; i >= 1; i--) {\n        std::cout << i << \" \";\n    }\n    std::cout << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5",
+        "expected_output": "5 4 3 2 1 ",
+        "description": "Обратный порядок от 5"
+      },
+      {
+        "input": "3",
+        "expected_output": "3 2 1 ",
+        "description": "Обратный порядок от 3"
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Таблица умножения",
+    "description": "Напишите программу, которая выводит таблицу умножения для числа N",
+    "difficulty": "easy",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    for (int i = 1; i <= 10; i++) {\n        std::cout << n << \" * \" << i << \" = \" << n * i << std::endl;\n    }\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5",
+        "expected_output": "5 * 1 = 5\n5 * 2 = 10\n5 * 3 = 15\n5 * 4 = 20\n5 * 5 = 25\n5 * 6 = 30\n5 * 7 = 35\n5 * 8 = 40\n5 * 9 = 45\n5 * 10 = 50",
+        "description": "Таблица умножения для 5"
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Проверка простого числа",
+    "description": "Напишите программу, которая проверяет, является ли число простым",
     "difficulty": "medium",
-    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    int result = 1;\n    for (int i = 1; i <= n; ++i) {\n        result *= i;\n    }\n    std::cout << result << std::endl;\n    return 0;\n}",
+    "template": "#include <iostream>\n#include <cmath>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    if (n <= 1) {\n        std::cout << \"No\" << std::endl;\n        return 0;\n    }\n    \n    for (int i = 2; i <= sqrt(n); i++) {\n        if (n % i == 0) {\n            std::cout << \"No\" << std::endl;\n            return 0;\n        }\n    }\n    std::cout << \"Yes\" << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "7",
+        "expected_output": "Yes",
+        "description": "Простое число"
+      },
+      {
+        "input": "4",
+        "expected_output": "No",
+        "description": "Составное число"
+      },
+      {
+        "input": "1",
+        "expected_output": "No",
+        "description": "Единица не является простым числом"
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Числа Фибоначчи",
+    "description": "Напишите программу, которая выводит N-е число Фибоначчи",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    if (n <= 1) {\n        std::cout << n << std::endl;\n        return 0;\n    }\n    \n    int a = 0, b = 1, c;\n    for (int i = 2; i <= n; i++) {\n        c = a + b;\n        a = b;\n        b = c;\n    }\n    std::cout << b << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5",
+        "expected_output": "5",
+        "description": "5-е число Фибоначчи"
+      },
+      {
+        "input": "0",
+        "expected_output": "0",
+        "description": "0-е число Фибоначчи"
+      },
+      {
+        "input": "10",
+        "expected_output": "55",
+        "description": "10-е число Фибоначчи"
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Переворот числа",
+    "description": "Напишите программу, которая переворачивает число",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    int reversed = 0;\n    while (n != 0) {\n        reversed = reversed * 10 + n % 10;\n        n /= 10;\n    }\n    std::cout << reversed << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "123",
+        "expected_output": "321",
+        "description": "Переворот положительного числа"
+      },
+      {
+        "input": "100",
+        "expected_output": "1",
+        "description": "Переворот числа с нулями"
+      },
+      {
+        "input": "9876",
+        "expected_output": "6789",
+        "description": "Переворот четырехзначного числа"
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Поиск НОД",
+    "description": "Напишите программу, которая находит наибольший общий делитель двух чисел",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // Ваш код здесь\n    while (b != 0) {\n        int temp = b;\n        b = a % b;\n        a = temp;\n    }\n    std::cout << a << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "54 24",
+        "expected_output": "6",
+        "description": "НОД 54 и 24"
+      },
+      {
+        "input": "48 18",
+        "expected_output": "6",
+        "description": "НОД 48 и 18"
+      },
+      {
+        "input": "17 13",
+        "expected_output": "1",
+        "description": "Взаимно простые числа"
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Калькулятор",
+    "description": "Напишите программу-калькулятор, которая выполняет операции +, -, *, /",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n#include <iomanip>\n\nint main() {\n    double a, b;\n    char op;\n    std::cin >> a >> op >> b;\n    // Ваш код здесь\n    double result;\n    switch (op) {\n        case '+':\n            result = a + b;\n            break;\n        case '-':\n            result = a - b;\n            break;\n        case '*':\n            result = a * b;\n            break;\n        case '/':\n            if (b == 0) {\n                std::cout << \"Error\" << std::endl;\n                return 0;\n            }\n            result = a / b;\n            break;\n        default:\n            std::cout << \"Error\" << std::endl;\n            return 0;\n    }\n    std::cout << std::fixed << std::setprecision(2) << result << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5 + 3",
+        "expected_output": "8.00",
+        "description": "Сложение"
+      },
+      {
+        "input": "10 / 3",
+        "expected_output": "3.33",
+        "description": "Деление"
+      },
+      {
+        "input": "7 / 0",
+        "expected_output": "Error",
+        "description": "Деление на ноль"
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "title": "Подсчет гласных",
+    "description": "Напишите программу, которая подсчитывает количество гласных в строке",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n#include <string>\n#include <cctype>\n\nint main() {\n    std::string s;\n    std::getline(std::cin, s);\n    // Ваш код здесь\n    int count = 0;\n    for (char c : s) {\n        c = tolower(c);\n        if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u') {\n            count++;\n        }\n    }\n    std::cout << count << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "Hello World",
+        "expected_output": "3",
+        "description": "Гласные в 'Hello World'"
+      },
+      {
+        "input": "Programming",
+        "expected_output": "3",
+        "description": "Гласные в 'Programming'"
+      },
+      {
+        "input": "BCDFG",
+        "expected_output": "0",
+        "description": "Строка без гласных"
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "title": "Палиндром",
+    "description": "Напишите программу, которая проверяет, является ли строка палиндромом",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    std::string s;\n    std::getline(std::cin, s);\n    // Ваш код здесь\n    std::string original = s;\n    std::reverse(s.begin(), s.end());\n    if (original == s) {\n        std::cout << \"Yes\" << std::endl;\n    } else {\n        std::cout << \"No\" << std::endl;\n    }\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "madam",
+        "expected_output": "Yes",
+        "description": "Палиндром"
+      },
+      {
+        "input": "hello",
+        "expected_output": "No",
+        "description": "Не палиндром"
+      },
+      {
+        "input": "a",
+        "expected_output": "Yes",
+        "description": "Одиночный символ"
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "title": "Сортировка массива",
+    "description": "Напишите программу, которая сортирует массив чисел по возрастанию",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::vector<int> arr(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> arr[i];\n    }\n    // Ваш код здесь\n    std::sort(arr.begin(), arr.end());\n    for (int num : arr) {\n        std::cout << num << \" \";\n    }\n    std::cout << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5\n5 2 8 1 3",
+        "expected_output": "1 2 3 5 8 ",
+        "description": "Сортировка массива из 5 элементов"
+      },
+      {
+        "input": "3\n-1 -5 2",
+        "expected_output": "-5 -1 2 ",
+        "description": "Сортировка отрицательных чисел"
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "title": "Поиск в массиве",
+    "description": "Напишите программу, которая ищет элемент в массиве и возвращает его индекс",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n#include <vector>\n\nint main() {\n    int n, target;\n    std::cin >> n >> target;\n    std::vector<int> arr(n);\n    for (int i = 0; i < n; i++) {\n        std::cin >> arr[i];\n    }\n    // Ваш код здесь\n    for (int i = 0; i < n; i++) {\n        if (arr[i] == target) {\n            std::cout << i << std::endl;\n            return 0;\n        }\n    }\n    std::cout << -1 << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5 3\n1 2 3 4 5",
+        "expected_output": "2",
+        "description": "Элемент найден"
+      },
+      {
+        "input": "4 10\n1 2 3 4",
+        "expected_output": "-1",
+        "description": "Элемент не найден"
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "title": "Двоичное представление",
+    "description": "Напишите программу, которая преобразует число в двоичную систему",
+    "difficulty": "hard",
+    "template": "#include <iostream>\n#include <bitset>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    std::bitset<32> binary(n);\n    std::string s = binary.to_string();\n    // Убираем ведущие нули\n    size_t pos = s.find('1');\n    if (pos != std::string::npos) {\n        std::cout << s.substr(pos) << std::endl;\n    } else {\n        std::cout << \"0\" << std::endl;\n    }\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5",
+        "expected_output": "101",
+        "description": "Двоичное представление 5"
+      },
+      {
+        "input": "10",
+        "expected_output": "1010",
+        "description": "Двоичное представление 10"
+      },
+      {
+        "input": "0",
+        "expected_output": "0",
+        "description": "Двоичное представление 0"
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "title": "Рекурсивный факториал",
+    "description": "Напишите программу, которая вычисляет факториал с помощью рекурсии",
+    "difficulty": "hard",
+    "template": "#include <iostream>\n\nint factorial(int n) {\n    // Ваш код здесь\n    if (n <= 1) return 1;\n    return n * factorial(n - 1);\n}\n\nint main() {\n    int n;\n    std::cin >> n;\n    std::cout << factorial(n) << std::endl;\n    return 0;\n}",
     "tests": [
       {
         "input": "5",
@@ -58,6 +355,82 @@
         "input": "1",
         "expected_output": "1",
         "description": "Факториал 1"
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "title": "Анаграммы",
+    "description": "Напишите программу, которая проверяет, являются ли две строки анаграммами",
+    "difficulty": "hard",
+    "template": "#include <iostream>\n#include <string>\n#include <algorithm>\n\nint main() {\n    std::string s1, s2;\n    std::getline(std::cin, s1);\n    std::getline(std::cin, s2);\n    // Ваш код здесь\n    std::sort(s1.begin(), s1.end());\n    std::sort(s2.begin(), s2.end());\n    if (s1 == s2) {\n        std::cout << \"Yes\" << std::endl;\n    } else {\n        std::cout << \"No\" << std::endl;\n    }\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "listen\nsilent",
+        "expected_output": "Yes",
+        "description": "Анаграммы"
+      },
+      {
+        "input": "hello\nworld",
+        "expected_output": "No",
+        "description": "Не анаграммы"
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "title": "Поиск подстроки",
+    "description": "Напишите программу, которая ищет подстроку в строке",
+    "difficulty": "hard",
+    "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string text, pattern;\n    std::getline(std::cin, text);\n    std::getline(std::cin, pattern);\n    // Ваш код здесь\n    size_t found = text.find(pattern);\n    if (found != std::string::npos) {\n        std::cout << found << std::endl;\n    } else {\n        std::cout << -1 << std::endl;\n    }\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "hello world\nworld",
+        "expected_output": "6",
+        "description": "Подстрока найдена"
+      },
+      {
+        "input": "programming\ntest",
+        "expected_output": "-1",
+        "description": "Подстрока не найдена"
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "title": "Шифр Цезаря",
+    "description": "Напишите программу, которая шифрует строку шифром Цезаря со сдвигом 3",
+    "difficulty": "hard",
+    "template": "#include <iostream>\n#include <string>\n\nint main() {\n    std::string s;\n    std::getline(std::cin, s);\n    // Ваш код здесь\n    for (char &c : s) {\n        if (isalpha(c)) {\n            char base = islower(c) ? 'a' : 'A';\n            c = (c - base + 3) % 26 + base;\n        }\n    }\n    std::cout << s << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "hello",
+        "expected_output": "khoor",
+        "description": "Шифрование слова"
+      },
+      {
+        "input": "abc XYZ",
+        "expected_output": "def ABC",
+        "description": "Шифрование с разным регистром"
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "title": "Класс Complex",
+    "description": "Создайте класс Complex для работы с комплексными числами",
+    "difficulty": "hard",
+    "template": "#include <iostream>\n\nclass Complex {\nprivate:\n    double real;\n    double imag;\npublic:\n    Complex(double r = 0, double i = 0) : real(r), imag(i) {}\n    \n    Complex operator+(const Complex& other) {\n        return Complex(real + other.real, imag + other.imag);\n    }\n    \n    void display() {\n        std::cout << real << \" + \" << imag << \"i\" << std::endl;\n    }\n};\n\nint main() {\n    double r1, i1, r2, i2;\n    std::cin >> r1 >> i1 >> r2 >> i2;\n    \n    Complex c1(r1, i1);\n    Complex c2(r2, i2);\n    Complex result = c1 + c2;\n    \n    result.display();\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "2 3\n1 2",
+        "expected_output": "3 + 5i",
+        "description": "Сложение комплексных чисел"
+      },
+      {
+        "input": "0 0\n0 0",
+        "expected_output": "0 + 0i",
+        "description": "Сложение нулевых комплексных чисел"
       }
     ]
   }

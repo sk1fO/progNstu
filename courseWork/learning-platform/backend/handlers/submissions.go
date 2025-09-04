@@ -54,7 +54,7 @@ func SubmitSolution(c *gin.Context) {
 	}
 
 	// Проверяем, есть ли тесты у задания
-	if task.Tests == nil || len(task.Tests) == 0 {
+	if task.Tests == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Для этого задания нет тестов"})
 		return
 	}

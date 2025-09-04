@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 function Login({ onLogin }) {
@@ -20,11 +20,14 @@ function Login({ onLogin }) {
         password
       });
       
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user_id', response.data.user_id);
-      localStorage.setItem('username', response.data.username);
+      // Вызываем колбэк с данными пользователя
+      onLogin({
+        token: response.data.token,
+        user_id: response.data.user_id,
+        username: response.data.username
+      });
       
-      onLogin();
+      // Перенаправляем на главную страницу
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка входа. Проверьте имя пользователя и пароль.');
@@ -35,63 +38,159 @@ function Login({ onLogin }) {
 
   return (
     <div style={{ maxWidth: '400px', margin: '2rem auto' }}>
-      <h2>Вход</h2>
-      
-      {error && <div style={{ color: 'red', marginBottom: '1rem', padding: '0.5rem', backgroundColor: '#ffe6e6', borderRadius: '4px' }}>{error}</div>}
-      
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-            Имя пользователя
-          </label>
-          <input
-            type="text"
-            placeholder="Введите имя пользователя"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
-            required
-            disabled={loading}
-          />
-        </div>
+      <div style={cardStyle}>
+        <h2 style={titleStyle}>Вход в систему</h2>
         
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
-            Пароль
-          </label>
-          <input
-            type="password"
-            placeholder="Введите пароль"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
-            required
-            disabled={loading}
-          />
-        </div>
+        {error && (
+          <div style={errorStyle}>
+            <div style={errorIconStyle}>⚠️</div>
+            <p>{error}</p>
+          </div>
+        )}
         
-        <button 
-          type="submit"
-          disabled={loading}
-          style={{ 
-            width: '100%', 
-            padding: '0.75rem', 
-            backgroundColor: loading ? '#6c757d' : '#007bff', 
-            color: 'white', 
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {loading ? 'Вход...' : 'Войти'}
-        </button>
-      </form>
-      
-      <p style={{ marginTop: '1rem', textAlign: 'center' }}>
-        Нет аккаунта? <Link to="/register" style={{ color: '#007bff', textDecoration: 'none' }}>Зарегистрируйтесь</Link>
-      </p>
+        <form onSubmit={handleSubmit} style={formStyle}>
+          <div style={inputGroupStyle}>
+            <label style={labelStyle}>
+              Имя пользователя
+            </label>
+            <input
+              type="text"
+              placeholder="Введите имя пользователя"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={inputStyle}
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          <div style={inputGroupStyle}>
+            <label style={labelStyle}>
+              Пароль
+            </label>
+            <input
+              type="password"
+              placeholder="Введите пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              style={inputStyle}
+              required
+              disabled={loading}
+            />
+          </div>
+          
+          <button 
+            type="submit"
+            disabled={loading}
+            style={buttonStyle(loading)}
+          >
+            {loading ? 'Вход...' : 'Войти'}
+          </button>
+        </form>
+        
+        <div style={registerLinkStyle}>
+          <p>Нет аккаунта? <a href="/register" style={linkStyle}>Зарегистрируйтесь</a></p>
+        </div>
+      </div>
     </div>
   );
 }
+
+const cardStyle = {
+  backgroundColor: '#fff',
+  padding: '2rem',
+  borderRadius: '12px',
+  boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+};
+
+const titleStyle = {
+  textAlign: 'center',
+  color: '#2c3e50',
+  marginBottom: '1.5rem',
+  fontSize: '1.8rem'
+};
+
+const formStyle = {
+  marginBottom: '1.5rem'
+};
+
+const inputGroupStyle = {
+  marginBottom: '1.5rem'
+};
+
+const labelStyle = {
+  display: 'block',
+  marginBottom: '0.5rem',
+  fontWeight: '600',
+  color: '#2c3e50'
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '0.75rem',
+  border: '2px solid #e9ecef',
+  borderRadius: '6px',
+  fontSize: '1rem',
+  transition: 'border-color 0.3s'
+};
+
+const buttonStyle = (loading) => ({
+  width: '100%',
+  padding: '0.75rem',
+  backgroundColor: loading ? '#6c757d' : '#3498db',
+  color: 'white',
+  border: 'none',
+  borderRadius: '6px',
+  fontSize: '1rem',
+  fontWeight: '600',
+  cursor: loading ? 'not-allowed' : 'pointer',
+  transition: 'background-color 0.3s'
+});
+
+const errorStyle = {
+  backgroundColor: '#f8d7da',
+  color: '#721c24',
+  padding: '1rem',
+  borderRadius: '6px',
+  marginBottom: '1.5rem',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem'
+};
+
+const errorIconStyle = {
+  fontSize: '1.2rem'
+};
+
+const registerLinkStyle = {
+  textAlign: 'center',
+  color: '#6c757d'
+};
+
+const linkStyle = {
+  color: '#3498db',
+  textDecoration: 'none',
+  fontWeight: '600'
+};
+
+// Добавляем hover эффекты
+Object.assign(inputStyle, {
+  ':focus': {
+    borderColor: '#3498db',
+    outline: 'none'
+  }
+});
+
+Object.assign(buttonStyle(false), {
+  ':hover': {
+    backgroundColor: '#2980b9'
+  }
+});
+
+Object.assign(linkStyle, {
+  ':hover': {
+    textDecoration: 'underline'
+  }
+});
 
 export default Login;
