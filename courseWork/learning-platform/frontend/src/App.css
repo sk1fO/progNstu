@@ -98,3 +98,70 @@ pre {
     gap: 0.5rem;
   }
 }
+
+/* Добавляем в существующий App.css */
+
+/* Стили для синтаксического highlighting */
+.code-editor {
+  position: relative;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-editor textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: 1rem;
+  border: none;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  background: transparent;
+  color: transparent;
+  caret-color: white;
+  z-index: 2;
+  position: relative;
+}
+
+.code-editor pre {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1rem;
+  margin: 0;
+  background: #2d3748 !important;
+  z-index: 1;
+  pointer-events: none;
+  overflow: auto;
+}
+
+/* Адаптивность для страницы задания */
+@media (max-width: 1024px) {
+  .task-container {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .task-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .button-group {
+    flex-direction: column;
+  }
+  
+  .button-group button {
+    width: 100%;
+  }
+  
+  .code-editor {
+    font-size: 12px;
+  }
+}
