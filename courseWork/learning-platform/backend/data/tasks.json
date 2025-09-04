@@ -1,0 +1,64 @@
+[
+  {
+    "id": 1,
+    "title": "Hello World",
+    "description": "Напишите программу, которая выводит 'Hello, World!'",
+    "difficulty": "easy",
+    "template": "#include <iostream>\n\nint main() {\n    // Ваш код здесь\n    std::cout << \"Hello, World!\" << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "",
+        "expected_output": "Hello, World!",
+        "description": "Программа должна вывести 'Hello, World!'"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Сумма двух чисел",
+    "description": "Напишите программу, которая складывает два числа. Числа поступают на вход через пробел.",
+    "difficulty": "easy",
+    "template": "#include <iostream>\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // Ваш код здесь\n    std::cout << a + b << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "2 3",
+        "expected_output": "5",
+        "description": "Сложение положительных чисел"
+      },
+      {
+        "input": "-5 10",
+        "expected_output": "5",
+        "description": "Сложение отрицательного и положительного числа"
+      },
+      {
+        "input": "0 0",
+        "expected_output": "0",
+        "description": "Сложение нулей"
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Факториал",
+    "description": "Напишите программу, которая вычисляет факториал числа",
+    "difficulty": "medium",
+    "template": "#include <iostream>\n\nint main() {\n    int n;\n    std::cin >> n;\n    // Ваш код здесь\n    int result = 1;\n    for (int i = 1; i <= n; ++i) {\n        result *= i;\n    }\n    std::cout << result << std::endl;\n    return 0;\n}",
+    "tests": [
+      {
+        "input": "5",
+        "expected_output": "120",
+        "description": "Факториал 5"
+      },
+      {
+        "input": "0",
+        "expected_output": "1",
+        "description": "Факториал 0"
+      },
+      {
+        "input": "1",
+        "expected_output": "1",
+        "description": "Факториал 1"
+      }
+    ]
+  }
+]
