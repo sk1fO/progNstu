@@ -48,11 +48,7 @@ function Task() {
       
       setOutput(response.data.output);
       
-      if (response.data.status === 'success') {
-        setTimeout(() => {
-          navigate('/profile');
-        }, 2000);
-      }
+      
     } catch (err) {
       setError(err.response?.data?.error || 'Ошибка отправки решения');
       console.error('Ошибка отправки:', err);
@@ -167,7 +163,7 @@ function Task() {
                 <h3 style={outputTitleStyle}>
                   Результат проверки
                   {output.includes('✅ Все тесты пройдены') && (
-                    <span style={successIconStyle}> 🎉</span>
+                    <span style={successIconStyle}> </span>
                   )}
                 </h3>
                 <div style={outputStyle}>

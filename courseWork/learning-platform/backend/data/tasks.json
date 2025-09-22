@@ -4,7 +4,7 @@
     "title": "Максимум из двух чисел",
     "description": "Напишите программу, которая находит максимальное из двух чисел",
     "difficulty": "easy",
-    "template": "#include <iostream>\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // Ваш код здесь\n    if (a > b) {\n        std::cout << a << std::endl;\n    } else {\n        std::cout << b << std::endl;\n    }\n    return 0;\n}",
+    "template": "#include <iostream>\n\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // Ваш код здесь\n    return 0;\n}",
     "tests": [
       {
         "input": "5 3",
