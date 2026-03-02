@@ -12,6 +12,6 @@ func main() {
 	service := business.NewAlertService(db)
 	ui := presentation.NewConsoleUI(service)
 
-	// Запуск
-	ui.Run()
+	// Запуск интерфейса 
+ 	ui.Run()
 }
