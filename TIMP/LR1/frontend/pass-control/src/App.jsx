@@ -15,9 +15,9 @@ function App() {
       <Navbar />
       <div className="container">
         <Routes>
+          <Route path="/" element={token ? <PassList /> : <Navigate to="/login" />} />
           <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
           <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
-          <Route path="/" element={token ? <PassList /> : <Navigate to="/login" />} />
           <Route path="/passes/:id" element={token ? <PassDetail /> : <Navigate to="/login" />} />
           <Route path="/passes/new" element={token ? <PassForm /> : <Navigate to="/login" />} />
           <Route path="/passes/:id/edit" element={token ? <PassForm /> : <Navigate to="/login" />} />
